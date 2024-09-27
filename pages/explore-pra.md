@@ -1,10 +1,7 @@
 ---
 title: Explore PRA
 permalink: /explore-pra/
-layout: layouts/page
+layout: layouts/explore-pra-page
 sidenav: true
+heading-elements: "h2 h3"
 ---
-
-## Explore PRA
-
-Content coming soon.
