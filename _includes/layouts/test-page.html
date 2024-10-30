@@ -1,0 +1,55 @@
+---
+layout: layouts/page
+---
+
+<div class="expore-pra-wrapper static-content">
+    <h1 class="margin-top-0">Explore PRA</h1>
+    <div class="margin-y-3">
+        <a href="#disclaimer-modal-1" class="usa-button" aria-controls="disclaimer-modal-1" data-open-modal>Open default
+            modal</a>
+        <div class="usa-modal" id="disclaimer-modal-1" aria-labelledby="modal-1-heading"
+            aria-describedby="modal-1-description">
+            <div class="usa-modal__content">
+                <div class="usa-modal__main">
+                    <h2 class="usa-modal__heading" id="modal-1-heading">
+                        Are you sure you want to continue?
+                    </h2>
+                    <div class="usa-prose">
+                        <div id="modal-1-description">
+                            <iframe src="https://docs.google.com/viewer?url={{ '/assets/documents/DHS-Supporting-Statement-DHS_A-11-Section-280-Improving-Customer-Experience-12-5-23.docx' | fullUrl }}&embedded=true" width="100%" height="500px"></iframe>
+                        </div>
+                    </div>
+                    <div class="usa-modal__footer">
+                        <ul class="usa-button-group">
+                            <li class="usa-button-group__item">
+                                <button type="button" class="usa-button" data-close-modal>
+                                    Continue without saving
+                                </button>
+                            </li>
+                            <li class="usa-button-group__item">
+                                <button type="button" class="usa-button usa-button--unstyled padding-105 text-center"
+                                    data-close-modal>
+                                    Go back
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <button type="button" class="usa-button usa-modal__close" aria-label="Close this window"
+                    data-close-modal>
+                    <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                        <use xlink:href="{{ '/assets/uswds/img/sprite.svg#close' | url }}"></use>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% capture modalFixJs %}
+{% include "_includes/theme/js/modalFix.js" %}
+{% endcapture %}
+
+<script>
+    // Modal Fix
+    {{ modalFixJs | jsmin }}
+</script>
