@@ -47,8 +47,7 @@
   },
   "dependencies": {
     "@netlify/functions": "^2.8.2",
-    "@uswds/uswds": "^3.8.2",
-    "docx2pdf-converter": "^2.1.1",
+    "@uswds/uswds": "^3.11.0",
     "docxtemplater": "^3.55.8",
     "dotenv": "^16.4.5",
     "eleventy-plugin-toc": "^1.1.5",

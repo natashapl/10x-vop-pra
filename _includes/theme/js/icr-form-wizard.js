@@ -263,33 +263,35 @@ function submitForm() {
     const form = document.getElementById('wizardForm');
     const formData = new FormData(form);
 
-    // Calculate totals
-    const totals = burdenEstimates.reduce(
-        (acc, row) => {
-            acc.totalNumberOfRespondents += Number(row.numberOfRespondents || 0);
-            acc.totalParticipationTime += Number(row.participationTime || 0);
-            acc.totalAnnualBurdenHours += Number(row.annualBurdenHours || 0);
-            return acc;
-        },
-        {
-            totalNumberOfRespondents: 0,
-            totalParticipationTime: 0,
-            totalAnnualBurdenHours: 0,
-        }
-    );
+    // Utility function to handle '✓' or ' ' for boolean fields
+    const setBooleanValue = (value, targetValue) => (value === targetValue ? '✓' : ' ');
+
+    // Calculate totals for the burden estimates
+    const totalNumberOfRespondents = burdenEstimates.reduce((sum, row) => sum + Number(row.numberOfRespondents || 0), 0);
+    const totalParticipationTime = burdenEstimates.reduce((sum, row) => sum + Number(row.participationTime || 0), 0);
+    const totalAnnualBurdenHours = burdenEstimates.reduce((sum, row) => sum + Number(row.annualBurdenHours || 0), 0);
 
     const payload = {
         title: formData.get('title'),
         purpose: formData.get('purpose'),
-        radioSelection: formData.get('radioSelection'),
-        surveyResults: formData.get('surveyResults'),
-        checkboxes: formData.getAll('checkboxes'),
+        customerResearch: setBooleanValue(formData.get('radioSelection'), 'Customer research (interview, focus groups, surveys)'),
+        customerFeedback: setBooleanValue(formData.get('radioSelection'), 'Customer feedback survey'),
+        usabilityTesting: setBooleanValue(formData.get('radioSelection'), 'Usability testing of products or services'),
+        surveyResultsYes: setBooleanValue(formData.get('surveyResults'), 'Yes'),
+        surveyResultsNo: setBooleanValue(formData.get('surveyResults'), 'No'),
+        notASurvey: setBooleanValue(formData.get('surveyResults'), 'Not a survey'),
+        webBased: formData.getAll('checkboxes').includes('Web-based or social media') ? '✓' : ' ',
+        telephone: formData.getAll('checkboxes').includes('Telephone') ? '✓' : ' ',
+        inPerson: formData.getAll('checkboxes').includes('In-person') ? '✓' : ' ',
+        mail: formData.getAll('checkboxes').includes('Mail') ? '✓' : ' ',
+        other: formData.getAll('checkboxes').includes('Other') ? '✓' : ' ',
         collectInfoFrom: formData.get('collectInfoFrom'),
         respondentProvideInfo: formData.get('respondentProvideInfo'),
         activityLookLike: formData.get('activityLookLike'),
         questionList: formData.get('questionList'),
         activityTiming: formData.get('activityTiming'),
-        incentiveOptions: formData.get('incentiveOptions'),
+        incentiveYes: setBooleanValue(formData.get('incentiveOptions'), 'Yes'),
+        incentiveNo: setBooleanValue(formData.get('incentiveOptions'), 'No'),
         incentiveDescription: formData.get('incentiveDescription'),
         burdenEstimates: burdenEstimates.map(row => ({
             categoryOfRespondents: row.categoryOfRespondents,
@@ -297,73 +299,55 @@ function submitForm() {
             participationTime: row.participationTime,
             annualBurdenHours: row.annualBurdenHours,
         })),
-        totalNumberOfRespondents: totals.totalNumberOfRespondents,
-        totalParticipationTime: totals.totalParticipationTime,
-        totalAnnualBurdenHours: totals.totalAnnualBurdenHours,
+        totalNumberOfRespondents,
+        totalParticipationTime,
+        totalAnnualBurdenHours,
         name: formData.get('name'),
         email: formData.get('email'),
     };
 
-    if (burdenEstimates.length === 0) {
-        alert('Please add at least one burden estimate row before submitting.');
-        return;
-    }
-
-    // Add burdenEstimates data
-    formData.append('burdenEstimates', JSON.stringify(burdenEstimates));
-
-    fetch('/.netlify/functions/generateWord', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.arrayBuffer();
-        })
-        .then(buffer => {
-            const blob = new Blob([buffer], {
-                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    fetch('/assets/templates/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx')
+        .then(res => res.arrayBuffer())
+        .then(content => {
+            const zip = new PizZip(content);
+            const doc = new window.docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
             });
 
-            documentBlobUrl = URL.createObjectURL(blob);
+            try {
+                doc.render(payload);
+            } catch (error) {
+                console.error("Error rendering document:", error);
+                return;
+            }
+
+            // Generate the document as a Blob
+            const blob = doc.getZip().generate({
+                type: 'blob',
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+
+            // Create a Blob URL and set it as the download link
             const downloadLink = document.getElementById("downloadLink");
+            const documentBlobUrl = URL.createObjectURL(blob);
             downloadLink.href = documentBlobUrl;
             downloadLink.textContent = "Download Completed Document";
 
+            // If there's an iframe, show the document in Google Docs Viewer
             const previewIframe = document.querySelector("iframe[data-dynamic-src]");
-
             if (previewIframe) {
                 previewIframe.src = `https://docs.google.com/viewer?url=${documentBlobUrl}&embedded=true`;
-        
-                // Add a loading message
-                previewIframe.insertAdjacentHTML('beforebegin', 
-                    '<div id="preview-loading" class="usa-alert usa-alert--info">' +
-                    '<div class="usa-alert__body">' +
-                    '<p class="usa-alert__text">Loading preview...</p>' +
-                    '</div>' +
-                    '</div>'
-                );
-
-                // Remove loading message once iframe loads
-                previewIframe.onload = () => {
-                    const loadingDiv = document.getElementById('preview-loading');
-                    if (loadingDiv) loadingDiv.remove();
-                };
             }
 
             // Move to the review step
             nextStep();
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error("Error generating document:", error);
         });
-
 }
+
 
 function sendEmail() {
     const form = document.getElementById('wizardForm');    
