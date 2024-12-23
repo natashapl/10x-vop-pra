@@ -338,7 +338,7 @@ function submitForm() {
             const previewIframe = document.querySelector("iframe[data-dynamic-src]");
 
             if (previewIframe) {
-                previewIframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentBlobUrl)}`;
+                previewIframe.src = `https://docs.google.com/viewer?url=${documentBlobUrl}&embedded=true`;
         
                 // Add a loading message
                 previewIframe.insertAdjacentHTML('beforebegin', 
