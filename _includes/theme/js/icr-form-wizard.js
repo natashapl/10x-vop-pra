@@ -270,6 +270,7 @@ function submitForm() {
     const totalNumberOfRespondents = burdenEstimates.reduce((sum, row) => sum + Number(row.numberOfRespondents || 0), 0);
     const totalParticipationTime = burdenEstimates.reduce((sum, row) => sum + Number(row.participationTime || 0), 0);
     const totalAnnualBurdenHours = burdenEstimates.reduce((sum, row) => sum + Number(row.annualBurdenHours || 0), 0);
+    const templatePath = "{{ '/assets/templates/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx' | url }}";
 
     const payload = {
         title: formData.get('title'),
@@ -306,7 +307,7 @@ function submitForm() {
         email: formData.get('email'),
     };
 
-    fetch('/assets/templates/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx')
+    fetch(templatePath)
         .then(res => res.arrayBuffer())
         .then(content => {
             const zip = new PizZip(content);
