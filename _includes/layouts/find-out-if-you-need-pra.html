@@ -9,7 +9,7 @@ layout: layouts/page
     <section class="usa-section what-do-you-need-pra-for-section border-section">
         <h2 class="site-preview-heading">What do you think you might need PRA clearance for?</h2>
         <ul class="usa-card-group grid-row">
-            <li class="usa-card tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Recruitment</p>
@@ -30,7 +30,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header text-bold">
                         <p class="usa-card__heading">Research</p>
@@ -52,7 +52,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Not sure yet... </p>
@@ -100,8 +100,8 @@ layout: layouts/page
         </p>
         <div class="quote-slider margin-top-5" role="region" aria-roledescription="carousel" aria-label="Quotes Slider">
             <!-- Slide Container -->
-            <ul class="slides-container" id="slides-container">
-                <li class="slide">
+            <div class="slides-container" id="slides-container">
+                <div class="slide" role="group" aria-hidden="false" aria-label="Quote 1">
                     <blockquote>
                         <q>An information collection means "obtaining, soliciting, or requiring the disclosure to third
                             parties or the public of information (facts or opinions) by or for an agency by means of
@@ -116,8 +116,8 @@ layout: layouts/page
                                 CFR 1320.3(c)</a>
                         </p>
                     </blockquote>
-                </li>
-                <li class="slide">
+                </div>
+                <div class="slide" role="group" aria-hidden="true" aria-label="Quote 2">
                     <blockquote>
                         <q>It is worth emphasizing that agencies may ask for facts and opinions of Federal employees
                             without triggering the PRA.</q>
@@ -127,8 +127,8 @@ layout: layouts/page
                                 Collection Under the Paperwork Reduction Act</a>
                         </p>
                     </blockquote>
-                </li>
-                <li class="slide">
+                </div>
+                <div class="slide" role="group" aria-hidden="true" aria-label="Quote 3">
                     <blockquote>
                         <q>The PRA applies to collections of information using identical questions posed to, or
                             reporting
@@ -143,8 +143,8 @@ layout: layouts/page
                                 Collection Under the Paperwork Reduction Act</a>
                         </p>
                     </blockquote>
-                </li>
-                <li class="slide">
+                </div>
+                <div class="slide" role="group" aria-hidden="true" aria-label="Quote 4">
                     <blockquote>
                         <q>OMB regulations specify a number of items that are generally not "information" under the PRA.
                             Important examples are...facts or opinions that are (1) submitted in response to general
@@ -162,48 +162,49 @@ layout: layouts/page
                                 to the regulatory definition of "information" under Paperwork Reduction Act</a>
                         </p>
                     </blockquote>
-                </li>
-            </ul>
+                </div>
+            </div>
+        
             <!-- Slider Controls -->
             <div class="slider-controls" role="group" aria-label="Slide controls">
                 <!-- Previous Arrow -->
-                <span class="prev" tabindex="0" role="button" aria-label="Previous Quote">
+                <button class="prev" tabindex="0" aria-label="Previous Quote">
                     <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
                         <use xlink:href="{{ '/assets/uswds/img/sprite.svg#navigate_before' | url }}"></use>
                     </svg>
-                </span>
-
+                </button>
+        
                 <!-- Dot Navigation -->
                 <div class="dot-nav-container">
-                    <div class="dot-nav" tabindex="0" role="button" aria-label="Go to Quote 1">
+                    <button class="dot-nav" tabindex="0" aria-label="Go to Quote 1">
                         <span><i class="usa-sr-only">Quote 1</i></span>
-                    </div>
-                    <div class="dot-nav" tabindex="0" role="button" aria-label="Go to Quote 2">
+                    </button>
+                    <button class="dot-nav" tabindex="0" aria-label="Go to Quote 2">
                         <span><i class="usa-sr-only">Quote 2</i></span>
-                    </div>
-                    <div class="dot-nav" tabindex="0" role="button" aria-label="Go to Quote 3">
+                    </button>
+                    <button class="dot-nav" tabindex="0" aria-label="Go to Quote 3">
                         <span><i class="usa-sr-only">Quote 3</i></span>
-                    </div>
-                    <div class="dot-nav" tabindex="0" role="button" aria-label="Go to Quote 4">
+                    </button>
+                    <button class="dot-nav" tabindex="0" aria-label="Go to Quote 4">
                         <span><i class="usa-sr-only">Quote 4</i></span>
-                    </div>                   
-
+                    </button>
                 </div>
-
+        
                 <!-- Next Arrow -->
-                <span class="next" tabindex="0" role="button" aria-label="Next Quote">
+                <button class="next" tabindex="0" aria-label="Next Quote">
                     <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
                         <use xlink:href="{{ '/assets/uswds/img/sprite.svg#navigate_next' | url }}"></use>
                     </svg>
-                </span>
+                </button>
             </div>
         </div>
+        
         <p class="text-bold">Collectively translated into plain English, these excerpts tell us that whether you need
             PRA clearance depends on:
         </p>
 
         <div class="grid-row grid-gap pra-clearance-dependencies">
-            <div class="grid-col-12 tablet:grid-col-6">
+            <div class="desktop:grid-col-6 margin-bottom-2">
                 <div class="content-row bg-primary-lighter height-full radius-md padding-3">
                     <p class="text-bold margin-top-0">WHO you will collect information from</p>
                     <ul class="usa-list margin-top-05">
@@ -212,7 +213,7 @@ layout: layouts/page
                     </ul>
                 </div>
             </div>
-            <div class="grid-col-12 tablet:grid-col-6">
+            <div class="desktop:grid-col-6 margin-bottom-2">
                 <div class="content-row bg-primary-lighter height-full radius-md padding-3">
                     <p class="text-bold margin-top-0">HOW you will collect information</p>
                     <ul class="usa-list margin-top-05">
@@ -236,10 +237,10 @@ layout: layouts/page
             <h3>Find out if you will need PRA clearance for RECRUITMENT</h3>
             <h4>Answer the following questions about your RECRUITMENT activities:</h4>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Over the course of 12 months will you be recruiting 10 or more participants? (OR is it possible that 10 or more people will respond to your call for recruitment?)</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="recruiting-10-or-more-yes" type="radio" name="recruiting-10-or-more" value="yes" />
                         <label class="usa-radio__label" for="recruiting-10-or-more-yes">Yes</label>
@@ -251,10 +252,10 @@ layout: layouts/page
                 </div>
             </fieldset>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Are you planning to recruit any members of the public (including contractors)?</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="recruiting-public-yes" type="radio" name="recruiting-public" value="yes" />
                         <label class="usa-radio__label" for="recruiting-public-yes">Yes</label>
@@ -266,10 +267,10 @@ layout: layouts/page
                 </div>
             </fieldset>   
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Will you be collecting <a class="usa-link usa-link--external" rel="noreferrer" target="_blank" href="https://www.gsa.gov/directives-library/gsa-rules-of-behavior-for-handling-personally-identifiable-information-pii-2">Personally Identifiable Information</a> (PII) from participants during the recruitment process? PII includes, but is not limited to: name, SSN, DoB, email address, home address, phone number, and demographic characteristics.</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="collecting-pii-yes" type="radio" name="collecting-pii" value="yes" />
                         <label class="usa-radio__label" for="collecting-pii-yes">Yes</label>
@@ -311,10 +312,10 @@ layout: layouts/page
             <h3>Find out if you will need PRA clearance for RESEARCH</h3>
             <h4>Answer the following questions about your RESEARCH PARTICIPANTS:</h4>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Over the course of 12 months will you be conducting research with 10 or more participants?</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="research-10-or-more-yes" type="radio" name="research-10-or-more" value="yes" />
                         <label class="usa-radio__label" for="research-10-or-more-yes">Yes</label>
@@ -326,10 +327,10 @@ layout: layouts/page
                 </div>
             </fieldset>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Will ANY of your research participants be members of the public (including contractors)?</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="research-public-yes" type="radio" name="research-public" value="yes" />
                         <label class="usa-radio__label" for="research-public-yes">Yes</label>
@@ -342,10 +343,10 @@ layout: layouts/page
             </fieldset>   
             <h4>Answer the following questions about your RESEARCH METHODS:</h4>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Will you be posing a set of standardized questions to participants during your research?</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="standardized-question-yes" type="radio" name="standardized-question" value="yes" />
                         <label class="usa-radio__label" for="standardized-question-yes">Yes</label>
@@ -357,10 +358,10 @@ layout: layouts/page
                 </div>
             </fieldset>
             <fieldset class="usa-fieldset grid-row">
-                <div class="grid-col-12 tablet:grid-col-9">
+                <div class="tablet:grid-col-9">
                     <legend class="usa-legend">Will you be directly observing research participants during the research activities?</legend>
                 </div>
-                <div class="grid-col-12 tablet:text-right yesNoWrapper tablet:grid-col-3">
+                <div class="tablet:text-right yesNoWrapper tablet:grid-col-3">
                     <span class="usa-radio display-inline-block text-middle margin-top-05 margin-right-2">
                         <input class="usa-radio__input" id="direct-observation-yes" type="radio" name="direct-observation" value="yes" />
                         <label class="usa-radio__label" for="direct-observation-yes">Yes</label>
@@ -377,7 +378,7 @@ layout: layouts/page
             </p>
         </form>
         <div class="grid-row grid-gap interview-types">
-            <div class="grid-col-12 tablet:grid-col-6 margin-bottom-4">
+            <div class="desktop:grid-col-6 margin-bottom-4">
                 <div class="usa-alert usa-alert--info height-full">
                     <div class="usa-alert__body">
                         <h4 class="usa-alert__heading text-bold margin-bottom-05">Standardized questions</h4>
@@ -389,7 +390,7 @@ layout: layouts/page
                     </div>
                 </div>
             </div>
-            <div class="grid-col-12 tablet:grid-col-6 margin-bottom-4">
+            <div class="desktop:grid-col-6 margin-bottom-4">
                 <div class="usa-alert usa-alert--info height-full">
                     <div class="usa-alert__body">
                         <h4 class="usa-alert__heading text-bold margin-bottom-05">Direct observation</h4>
@@ -427,7 +428,7 @@ layout: layouts/page
         <p class="margin-bottom-05 text-bold font-sans-lg">Discovery methods</p>
         <p class="margin-top-05">These methods likely do NOT require PRA clearance. Click the link to view the 18F Method card for more information.</p>
         <ul class="usa-card-group grid-row">
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Card sorting</p>
@@ -451,7 +452,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Multivariate testing</p>
@@ -475,7 +476,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Usability testing</p>
@@ -499,7 +500,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Visual preference testing</p>
@@ -523,7 +524,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Other method</p>
@@ -551,7 +552,7 @@ layout: layouts/page
         <p class="margin-bottom-05 text-bold font-sans-lg">Validation methods</p>
         <p class="margin-top-05">These methods likely do NOT require PRA clearance. Click the link to view the 18F Method card for more information.</p>
         <ul class="usa-card-group grid-row">
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Cognitive walkthrough</p>
@@ -575,7 +576,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">Contextual inquiry</p>
@@ -599,7 +600,7 @@ layout: layouts/page
                     </div>
                 </div>
             </li>
-            <li class="usa-card discovery-methods tablet:grid-col-6 desktop:grid-col-4">
+            <li class="usa-card discovery-methods desktop:grid-col-4">
                 <div class="usa-card__container">
                     <div class="usa-card__header">
                         <p class="usa-card__heading text-bold">User interviews</p>

@@ -54,6 +54,10 @@ h4 {
     }
 }
 
+.usa-button--outline {
+    background-color: white;
+}
+
 .usa-section {
     padding-top: units(6);
     padding-bottom: 0;
@@ -171,11 +175,16 @@ h4 {
     max-width: 15rem;
     min-width: 13.75rem;
     order: unset;
+    display: none;
 
     &__nav {
         padding-top: 0;
         padding-left: 0;
     }
+
+    @include at-media("tablet-lg") {
+        display: block;
+    } 
 }
 
 .usa-in-page-nav__item--primary {
@@ -237,26 +246,29 @@ h4 {
 }
 
 .slides-container {
-    height: 100%;
-    width: 100%;
-    display: flex;
     overflow: hidden;
-    scroll-behavior: smooth;
-    list-style: none;
-    margin: 0;
-    padding: 0;
+    transition: height 0.3s ease-in-out;
+    position: relative;
+
 }
 
 .slide {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
-    flex: 1 0 100%;
     margin-right: units(0.5);
     padding: 0 units(2) units(3) units(1);
 
     @include at-media("tablet") {
         padding: 0 units(2) units(3) units(3);    
-    }   
+    } 
+    
+    &[aria-hidden="false"] {
+        display: block;
+        position: relative;
+    }
 
     blockquote {
         width: 97%;
@@ -277,11 +289,8 @@ h4 {
             top: units(2);
             bottom: units(2);
             width: 4px;
-            /* Thickness of the vertical line */
             background-color: #ccc;
-            /* Color of the vertical line */
             border-radius: 2px;
-            /* Rounded vertical line */
         }
     }
 }
@@ -306,6 +315,8 @@ h4 {
     user-select: none;
     padding: 0 units(2);
     font-size: units(5);
+    background: none;
+    border: none;
 
     @include at-media("tablet") {
         font-size: units(3); 
@@ -333,6 +344,8 @@ h4 {
     cursor: pointer;
     display: inline-block;
     padding: units(1);
+    background: none;
+    border: none;
 
     span {
         display: block;
@@ -507,4 +520,122 @@ iframe:focus,
     }
   }
   
+/* Validation */
+.usa-input--error {
+    .usa-radio__label::before,
+    .usa-checkbox__label::before {
+        box-shadow: 0 0 0 2px color("red-60v");
+    }
+    
+    .usa-input,
+    .usa-textarea,
+    .usa-select {
+        border-color: color("red-60v");
+    }
+}
 
+.icr-form-builder-section {
+    padding: units(4);
+    background: color('blue-warm-5v');
+    margin-top: units(4);
+
+    h2 {
+        font-family: font-family('serif');
+    }
+
+    @include at-media(desktop) {
+        padding: units(7);
+    }
+
+    .usa-step-indicator,
+    .usa-radio,
+    .usa-checkbox {
+        background: none;
+    }
+
+    .usa-step-indicator__segment {
+        @include at-media("desktop-lg") {
+            max-width: 25rem;
+
+            &#step-indicator-2 {
+                width: 23rem;
+            }
+
+            &-label {
+                padding-right: units(2);
+            }
+        } 
+    }
+
+    .usa-fieldset {
+        margin-bottom: units(4);
+
+        legend,
+        label {
+            margin-top: units(0.5);
+        }
+
+        .usa-legend {
+            color: black;
+
+            .usa-hint {
+                color: color("red-60v");
+            }
+        }
+
+        .usa-label {
+            color: color("gray-50"); 
+        }
+
+        .usa-label,
+        .usa-hint {
+            font-size: 0.875rem;
+        }
+
+        .usa-legend,
+        .usa-label,
+        .usa-input,
+        .usa-textarea {
+            width: 100%;
+            max-width: none;
+        }
+
+        .usa-radio,
+        .usa-checkbox {
+            padding: units(1);
+            background: white;
+            border: units(1px) solid color("gray-20");
+            margin-top: units(1);
+        }
+
+        &.certification {
+            .usa-list {
+                margin-top: units(2px);
+                margin-bottom: units(4);
+
+                li {
+                    font-size: 0.875rem;
+                    color: color("gray-50"); 
+                    max-width: none;
+                }
+            }
+        }
+    }
+
+    .usa-input--error {
+        .usa-radio,
+        .usa-checkbox {
+            border: units(1px) solid color("red-60v");
+        }
+    }
+
+    .pra-clearance-instructions {
+        li { 
+            margin-bottom: units(3);
+        };
+    }
+}
+
+.usa-error-message {
+    margin-top: units(1);
+}
