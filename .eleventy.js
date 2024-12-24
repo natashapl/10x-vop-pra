@@ -59,6 +59,9 @@ module.exports = function (config) {
   config.addPassthroughCopy({
     "./node_modules/pizzip/dist/": "assets/pizzip/dist/",
   });
+  config.addPassthroughCopy({
+    "./node_modules/pdf-lib/dist/": "assets/pdf-lib/dist/",
+  });
   config.addPassthroughCopy({ "_includes/theme/images": "assets/images" });
   config.addPassthroughCopy({ "_includes/theme/js": "assets/js" });
   config.addPassthroughCopy({ "_includes/theme/documents": "assets/documents" });

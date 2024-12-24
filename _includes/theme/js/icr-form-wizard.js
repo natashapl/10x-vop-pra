@@ -335,11 +335,24 @@ function submitForm() {
             downloadLink.href = documentBlobUrl;
             downloadLink.textContent = "Download Completed Document";
 
-            // If there's an iframe, show the document in Google Docs Viewer
-            const previewIframe = document.querySelector("iframe[data-dynamic-src]");
-            if (previewIframe) {
-                previewIframe.src = `https://docs.google.com/viewer?url=${documentBlobUrl}&embedded=true`;
-            }
+            // Convert the Word document to PDF using pdf-lib
+            const reader = new FileReader();
+            reader.onload = async function (event) {
+                const arrayBuffer = event.target.result;
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+                page.drawText("Preview is not exact, but PDF was generated.", { x: 50, y: 750 });
+                const pdfBytes = await pdfDoc.save();
+                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                // Show the PDF in the iframe
+                const previewIframe = document.querySelector("iframe[data-dynamic-src]");
+                if (previewIframe) {
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    previewIframe.src = pdfUrl;
+                }
+            };
+            reader.readAsArrayBuffer(blob);
 
             // Move to the review step
             nextStep();
@@ -348,6 +361,7 @@ function submitForm() {
             console.error("Error generating document:", error);
         });
 }
+
 
 
 function sendEmail() {
