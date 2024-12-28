@@ -11,7 +11,8 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, '_site'))); // Serve static files
+app.use(express.static(path.join(__dirname, '_site')));
+app.use('/uploads', express.static(path.join(__dirname, '_site/uploads')));
 
 // Rate limiter middleware
 const limiter = RateLimit({
@@ -22,6 +23,8 @@ const limiter = RateLimit({
 // Routes
 app.post('/generate-word', limiter, (req, res, next) => {
     console.log('POST /generate-word received');
+    console.log('Request body:', req.body);
+  
     try {
         generateWord(req, res);
     } catch (error) {
