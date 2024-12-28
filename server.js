@@ -2,7 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-const generateWord = require('./server/generate-word'); // Adjust path if needed
+const generateWord = require('./server/generate-word'); 
+const RateLimit = require('express-rate-limit');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,8 +13,14 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, '_site'))); // Serve static files from the public folder
 
+// Rate limiter middleware
+const limiter = RateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // max 100 requests per windowMs
+});
+
 // Routes
-app.post('/generate-word', generateWord);
+app.post('/generate-word', limiter, generateWord);
 
 // Fallback route for undefined paths
 app.use((req, res) => {

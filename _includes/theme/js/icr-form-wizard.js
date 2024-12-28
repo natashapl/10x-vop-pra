@@ -238,11 +238,19 @@ function updateFileList() {
 
     uploadedFiles.forEach((file, index) => {
         const fileEntry = document.createElement('div');
+        const fileNameSpan = document.createElement('span');
+        const removeButton = document.createElement('button');
+
         fileEntry.className = 'file-entry';
-        fileEntry.innerHTML = `
-        <span>${file.name}</span>
-        <button type="button" onclick="removeFile(${index})">Remove</button>
-        `;
+        fileNameSpan.textContent = file.name;
+        fileEntry.appendChild(fileNameSpan);
+
+        
+        removeButton.type = 'button';
+        removeButton.textContent = 'Remove';
+        removeButton.onclick = () => removeFile(index);
+        
+        fileEntry.appendChild(removeButton);
         fileListDiv.appendChild(fileEntry);
     });
 
