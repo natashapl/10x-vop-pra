@@ -15,7 +15,7 @@
     "dev:assets": "npm run assets:refresh && npm run assets:watch",
     "dev:debug": "DEBUG=* npx @11ty/eleventy --serve --watch",
     "dev:serve": "npx @11ty/eleventy --serve --watch",
-    "federalist": "npm run build && ELEVENTY_ENV=production npm run assets:autoprefix && node server.js",
+    "federalist": "npm run build && ELEVENTY_ENV=production npm run assets:autoprefix",
     "serve": "npx @11ty/eleventy --serve",
     "start": "npm run build && npm run assets:autoprefix && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
