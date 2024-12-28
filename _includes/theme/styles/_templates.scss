@@ -547,6 +547,10 @@ iframe:focus,
         padding: units(7);
     }
 
+    .step {
+        display: none;
+    }
+
     .usa-step-indicator,
     .usa-radio,
     .usa-checkbox {
@@ -618,6 +622,14 @@ iframe:focus,
                     color: color("gray-50"); 
                     max-width: none;
                 }
+            }
+        }
+
+        .category-inputs {
+            margin-left: units(2);
+
+            .dynamic-input {
+                max-width: units(15);
             }
         }
     }

@@ -7,70 +7,7 @@ const fileInput = document.getElementById('attachments');
 const fileListDiv = document.getElementById('file-list');
 let uploadedFiles = [];
 let documentBlobUrl = null; 
-let burdenEstimates = []; // Array to store the rows
-
-function addBurdenRow() {
-    const rowId = `burdenRow-${burdenEstimates.length}`;
-    burdenEstimates.push({
-        id: rowId,
-        categoryOfRespondents: '',
-        numberOfRespondents: '',
-        participationTime: '',
-        annualBurdenHours: ''
-    });
-
-    const container = document.getElementById('burdenRowsContainer');
-    const row = document.createElement('div');
-    row.id = rowId;
-    row.className = 'burden-row';
-    row.innerHTML = `
-        <fieldset class="usa-fieldset">
-            <legend class="usa-legend">Category of respondents <span class="usa-hint">*</span></legend>
-            <label class="usa-label" for="categoryOfRespondents">Identify who you expect the respondents to be in terms of the following categories: (1) Individuals or Households; (2) Private Sector; (3) State, local, or tribal governments; or (4) Federal Government.</label>
-            <input class="usa-input" type="text" 
-onchange="updateBurdenRow('${rowId}', 'categoryOfRespondents', this.value)" required>
-
-        </fieldset>
-
-        <fieldset class="usa-fieldset">
-            <legend class="usa-legend">Number of respondents <span class="usa-hint">*</span></legend>
-            <label class="usa-label" for="numberOfRespondents">Provide the total number of respondents involved in a data collection process.</label>
-            <input class="usa-input" type="number" 
-onchange="updateBurdenRow('${rowId}', 'numberOfRespondents', this.value)" required>
-        </fieldset>
-
-        <fieldset class="usa-fieldset">
-            <legend class="usa-legend">Participation time <span class="usa-hint">*</span></legend>
-            <label class="usa-label" for="participationTime">Provide an estimate of the amount of time required for a respondent to participate (e.g. fill out a survey or participate in a focus group).</label>
-            <input class="usa-input" type="number" 
-onchange="updateBurdenRow('${rowId}', 'participationTime', this.value)" required>
-        </fieldset>
-
-        <fieldset class="usa-fieldset">
-            <legend class="usa-legend">Annual burden hours <span class="usa-hint">*</span></legend>
-            <label class="usa-label" for="annualBurdenHours">This is calculated by multiplying the number of responses and participation time and dividing by 60.</label>
-            <input class="usa-input" type="number" 
-onchange="updateBurdenRow('${rowId}', 'annualBurdenHours', this.value)" required>
-        </fieldset>
-        <p class="text-right"><button type="button" class="usa-button usa-button--secondary" onclick="removeBurdenRow('${rowId}')">Remove</button></p>
-        
-        <hr class="margin-bottom-3">
-    `;
-    container.appendChild(row);
-}
-
-function removeBurdenRow(rowId) {
-    burdenEstimates = burdenEstimates.filter(row => row.id !== rowId);
-    const rowElement = document.getElementById(rowId);
-    rowElement.parentNode.removeChild(rowElement);
-}
-
-function updateBurdenRow(rowId, field, value) {
-    const row = burdenEstimates.find(row => row.id === rowId);
-    if (row) {
-        row[field] = isNaN(value) ? value : parseFloat(value);
-    }
-}
+const burdenEstimates = [];
 
 function showStep(step) {
     steps.forEach((element,index) => {
@@ -97,9 +34,12 @@ function showStep(step) {
 }
 
 function validateStep(step) {
-    let isValid = true; // Track overall step validation
-    const stepElement = steps[step]; // Current step container
+    let isValid = true;
+    const stepElement = steps[step];
     const inputs = stepElement.querySelectorAll("input, textarea, select");
+    let firstInvalidField = null;
+    const burdenEstimates = [];
+
 
     // Remove previous error messages
     function cleanupErrors(input, parentContainer) {
@@ -121,6 +61,10 @@ function validateStep(step) {
 
         parentContainer.classList.add("usa-input--error");
         parentContainer.appendChild(errorElement);
+
+        if (!firstInvalidField) {
+            firstInvalidField = input; // Set the first invalid field
+        }
     }
 
     // Helper to validate radio and checkbox groups
@@ -184,8 +128,77 @@ function validateStep(step) {
         });
     });
 
+    // Special validation logic for Step 3: Burden estimates
+    if (step === 2) { // Assuming step 3 is at index 2
+        const categories = stepElement.querySelectorAll('input[name="category"]:checked');
+        if (!categories.length) {
+            const container = stepElement.querySelector(".usa-fieldset");
+            showErrorMessage(container, "Please select at least one category.");
+            isValid = false;
+        } else {
+            categories.forEach((category) => {
+                const numberField = stepElement.querySelector(`#numberOfRespondents-${category.value}`);
+                const timeField = stepElement.querySelector(`#participationTime-${category.value}`);
+                if (!numberField.value.trim() || isNaN(numberField.value) || Number(numberField.value) <= 0) {
+                    showErrorMessage(numberField, "Please enter a valid number of respondents.");
+                    isValid = false;
+                }
+                if (!timeField.value.trim() || isNaN(timeField.value) || Number(timeField.value) <= 0) {
+                    showErrorMessage(timeField, "Please enter a valid participation time.");
+                    isValid = false;
+                }
+            });
+        }
+    }
+
+    // Scroll to the first invalid field, if any
+    if (!isValid && firstInvalidField) {
+        firstInvalidField.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstInvalidField.focus(); // Optionally, focus the invalid field
+    }
+
     return isValid;
 }
+
+function toggleCategoryInputs(category, isChecked) {
+    const container = document.getElementById(`${category}-inputs`);
+    if (isChecked) {
+        container.style.display = "block";
+    } else {
+        container.style.display = "none";
+        // Reset the values when unchecked
+        delete burdenEstimates[category];
+    }
+}
+
+function updateBurdenEstimate(category) {
+    const numberOfRespondents = parseFloat(document.querySelector(`#numberOfRespondents-${category}`).value) || 0;
+    const participationTime = parseFloat(document.querySelector(`#participationTime-${category}`).value) || 0;
+
+    const annualBurdenHours = (numberOfRespondents * participationTime) / 60;
+
+    // Update the burden estimates object
+    burdenEstimates[category] = {
+        categoryOfRespondents: category,
+        numberOfRespondents,
+        participationTime,
+        annualBurdenHours: Math.round(annualBurdenHours * 100) / 100, // Round to 2 decimals
+    };
+}
+
+document.querySelectorAll(".category-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", (e) => {
+        const category = e.target.value;
+        toggleCategoryInputs(category, e.target.checked);
+    });
+});
+
+document.querySelectorAll(".dynamic-input").forEach((input) => {
+    input.addEventListener("input", (e) => {
+        const category = e.target.dataset.category;
+        updateBurdenEstimate(category);
+    });
+});
 
 function nextStep() {
     validateStep(currentStep);
@@ -207,11 +220,6 @@ function previousStep() {
 
 // Show the first step on page load
 document.addEventListener("DOMContentLoaded",() => {
-    // Initialize the burdenRowsContainer with a default row
-    if (burdenEstimates.length === 0) {
-        addBurdenRow(); // Add a default row when the page loads
-    }
-
     showStep(currentStep);
 });
 
@@ -258,6 +266,9 @@ function updateFileInput() {
     // Update the file input with the new files
     fileInput.files = dataTransfer.files;
 }
+function setBooleanValue(value, targetValue) {
+    return value === targetValue ? '✓' : ' ';
+}
 
 function submitForm() {
     const form = document.getElementById('wizardForm');
@@ -266,40 +277,72 @@ function submitForm() {
     // Utility function to handle '✓' or ' ' for boolean fields
     const setBooleanValue = (value, targetValue) => (value === targetValue ? '✓' : ' ');
 
+    // Extract checked checkboxes
+    const checkboxes = Array.from(form.querySelectorAll('input[name="checkboxes"]:checked')).map(cb => cb.value);
+
+    // Extract selected radio button values
+    const radioSelection = form.querySelector('input[name="radioSelection"]:checked')?.value || '';
+    const surveyResults = form.querySelector('input[name="surveyResults"]:checked')?.value || '';
+    const incentiveOptions = form.querySelector('input[name="incentiveOptions"]:checked')?.value || '';
+
+    // Dynamically populate burdenEstimates based on Step 3 inputs
+    const categories = document.querySelectorAll('input[name="category"]:checked');
+    categories.forEach((category) => {
+        const categoryName = category.value;
+        const numberField = document.querySelector(`#numberOfRespondents-${categoryName}`);
+        const timeField = document.querySelector(`#participationTime-${categoryName}`);
+
+        // Validate and add to burdenEstimates if valid
+        if (numberField && timeField && numberField.value && timeField.value) {
+            const numberOfRespondents = Number(numberField.value);
+            const participationTime = Number(timeField.value);
+
+            // Perform validation for these fields
+            if (numberOfRespondents > 0 && participationTime > 0) {
+                const annualBurdenHours = (numberOfRespondents * participationTime) / 60;
+                burdenEstimates.push({
+                    categoryOfRespondents: categoryName,
+                    numberOfRespondents,
+                    participationTime,
+                    annualBurdenHours,
+                });
+            }
+        }
+    });
+
+    if (burdenEstimates.length === 0) {
+        alert("Please fill out the Burden Estimates step completely.");
+        return;
+    }
+
     // Calculate totals for the burden estimates
-    const totalNumberOfRespondents = burdenEstimates.reduce((sum, row) => sum + Number(row.numberOfRespondents || 0), 0);
-    const totalParticipationTime = burdenEstimates.reduce((sum, row) => sum + Number(row.participationTime || 0), 0);
-    const totalAnnualBurdenHours = burdenEstimates.reduce((sum, row) => sum + Number(row.annualBurdenHours || 0), 0);
-    const templatePath = "{{ '/assets/templates/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx' | url }}";
+    const totalNumberOfRespondents = burdenEstimates.reduce((sum, row) => sum + row.numberOfRespondents, 0);
+    const totalParticipationTime = burdenEstimates.reduce((sum, row) => sum + row.participationTime, 0);
+    const totalAnnualBurdenHours = burdenEstimates.reduce((sum, row) => sum + row.annualBurdenHours, 0);
 
     const payload = {
         title: formData.get('title'),
         purpose: formData.get('purpose'),
-        customerResearch: setBooleanValue(formData.get('radioSelection'), 'Customer research (interview, focus groups, surveys)'),
-        customerFeedback: setBooleanValue(formData.get('radioSelection'), 'Customer feedback survey'),
-        usabilityTesting: setBooleanValue(formData.get('radioSelection'), 'Usability testing of products or services'),
-        surveyResultsYes: setBooleanValue(formData.get('surveyResults'), 'Yes'),
-        surveyResultsNo: setBooleanValue(formData.get('surveyResults'), 'No'),
-        notASurvey: setBooleanValue(formData.get('surveyResults'), 'Not a survey'),
-        webBased: formData.getAll('checkboxes').includes('Web-based or social media') ? '✓' : ' ',
-        telephone: formData.getAll('checkboxes').includes('Telephone') ? '✓' : ' ',
-        inPerson: formData.getAll('checkboxes').includes('In-person') ? '✓' : ' ',
-        mail: formData.getAll('checkboxes').includes('Mail') ? '✓' : ' ',
-        other: formData.getAll('checkboxes').includes('Other') ? '✓' : ' ',
+        customerResearch: setBooleanValue(radioSelection, 'Customer research (interview, focus groups, surveys)'),
+        customerFeedback: setBooleanValue(radioSelection, 'Customer feedback survey'),
+        usabilityTesting: setBooleanValue(radioSelection, 'Usability testing of products or services'),
+        surveyResultsYes: setBooleanValue(surveyResults, 'Yes'),
+        surveyResultsNo: setBooleanValue(surveyResults, 'No'),
+        notASurvey: setBooleanValue(surveyResults, 'Not a survey'),
+        webBased: checkboxes.includes('Web-based or social media') ? '✓' : ' ',
+        telephone: checkboxes.includes('Telephone') ? '✓' : ' ',
+        inPerson: checkboxes.includes('In-person') ? '✓' : ' ',
+        mail: checkboxes.includes('Mail') ? '✓' : ' ',
+        other: checkboxes.includes('Other') ? '✓' : ' ',
         collectInfoFrom: formData.get('collectInfoFrom'),
         respondentProvideInfo: formData.get('respondentProvideInfo'),
         activityLookLike: formData.get('activityLookLike'),
         questionList: formData.get('questionList'),
         activityTiming: formData.get('activityTiming'),
-        incentiveYes: setBooleanValue(formData.get('incentiveOptions'), 'Yes'),
-        incentiveNo: setBooleanValue(formData.get('incentiveOptions'), 'No'),
+        incentiveYes: setBooleanValue(incentiveOptions, 'Yes'),
+        incentiveNo: setBooleanValue(incentiveOptions, 'No'),
         incentiveDescription: formData.get('incentiveDescription'),
-        burdenEstimates: burdenEstimates.map(row => ({
-            categoryOfRespondents: row.categoryOfRespondents,
-            numberOfRespondents: row.numberOfRespondents,
-            participationTime: row.participationTime,
-            annualBurdenHours: row.annualBurdenHours,
-        })),
+        burdenEstimates,
         totalNumberOfRespondents,
         totalParticipationTime,
         totalAnnualBurdenHours,
@@ -307,62 +350,39 @@ function submitForm() {
         email: formData.get('email'),
     };
 
-    fetch(templatePath)
-        .then(res => res.arrayBuffer())
-        .then(content => {
-            const zip = new PizZip(content);
-            const doc = new window.docxtemplater(zip, {
-                paragraphLoop: true,
-                linebreaks: true,
-            });
+    console.log('Checkboxes:', checkboxes);
+    console.log('Radio Selection:', radioSelection);
+    console.log('Payload:', payload);
+    console.log('Payload before sending:', JSON.stringify(payload, null, 2));
+    console.log('test that all is updated');
 
-            try {
-                doc.render(payload);
-            } catch (error) {
-                console.error("Error rendering document:", error);
-                return;
-            }
+    fetch('/generate-word', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.fileUrl) {
+        const previewIframe = document.querySelector('iframe[data-dynamic-src]');
+        if (previewIframe) {
+          previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
+        }
 
-            // Generate the document as a Blob
-            const blob = doc.getZip().generate({
-                type: 'blob',
-                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            });
-
-            // Create a Blob URL and set it as the download link
-            const downloadLink = document.getElementById("downloadLink");
-            const documentBlobUrl = URL.createObjectURL(blob);
-            downloadLink.href = documentBlobUrl;
-            downloadLink.textContent = "Download Completed Document";
-
-            // Convert the Word document to PDF using pdf-lib
-            const reader = new FileReader();
-            reader.onload = async function (event) {
-                const arrayBuffer = event.target.result;
-                const pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
-                page.drawText("Preview is not exact, but PDF was generated.", { x: 50, y: 750 });
-                const pdfBytes = await pdfDoc.save();
-                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-
-                // Show the PDF in the iframe
-                const previewIframe = document.querySelector("iframe[data-dynamic-src]");
-                if (previewIframe) {
-                    const pdfUrl = URL.createObjectURL(pdfBlob);
-                    previewIframe.src = pdfUrl;
-                }
-            };
-            reader.readAsArrayBuffer(blob);
-
-            // Move to the review step
-            nextStep();
-        })
-        .catch(error => {
-            console.error("Error generating document:", error);
-        });
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = data.fileUrl;
+        downloadLink.textContent = 'Download Completed Document';
+      } else {
+        throw new Error('File URL not returned.');
+      }
+    })
+    .catch((error) => {
+      console.error('Error generating document:', error);
+      alert('There was an error generating your document. Please try again.');
+    });
 }
-
-
 
 function sendEmail() {
     const form = document.getElementById('wizardForm');    

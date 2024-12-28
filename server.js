@@ -1,0 +1,26 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const path = require('path');
+const generateWord = require('./server/generate-word'); // Adjust path if needed
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(bodyParser.json());
+app.use(cors());
+app.use(express.static(path.join(__dirname, '_site'))); // Serve static files from the public folder
+
+// Routes
+app.post('/generate-word', generateWord);
+
+// Fallback route for undefined paths
+app.use((req, res) => {
+  res.status(404).send({ error: 'Route not found.' });
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});

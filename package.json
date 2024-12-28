@@ -17,7 +17,7 @@
     "dev:serve": "npx @11ty/eleventy --serve --watch",
     "federalist": "npm run build && ELEVENTY_ENV=production npm run assets:autoprefix",
     "serve": "npx @11ty/eleventy --serve",
-    "start": "npx @11ty/eleventy --serve",
+    "start": "npm run build && npm run assets:autoprefix && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "debug": "DEBUG=* npx @11ty/eleventy"
   },
@@ -48,13 +48,13 @@
   "dependencies": {
     "@netlify/functions": "^2.8.2",
     "@uswds/uswds": "^3.11.0",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "docx-pdf": "^0.0.1",
     "docxtemplater": "^3.55.8",
     "dotenv": "^16.4.5",
     "eleventy-plugin-toc": "^1.1.5",
     "express": "^4.21.2",
-    "formidable": "^3.5.2",
-    "jsdom": "^23.2.0",
-    "pdf-lib": "^1.17.1",
     "pizzip": "^3.1.7"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"

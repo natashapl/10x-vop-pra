@@ -60,12 +60,13 @@ module.exports = function (config) {
     "./node_modules/pizzip/dist/": "assets/pizzip/dist/",
   });
   config.addPassthroughCopy({
-    "./node_modules/pdf-lib/dist/": "assets/pdf-lib/dist/",
+    "./node_modules/docx2pdf-converter/": "assets/docx2pdf-converter/",
   });
   config.addPassthroughCopy({ "_includes/theme/images": "assets/images" });
   config.addPassthroughCopy({ "_includes/theme/js": "assets/js" });
   config.addPassthroughCopy({ "_includes/theme/documents": "assets/documents" });
   config.addPassthroughCopy({ "_includes/theme/templates": "assets/templates" });
+  config.addPassthroughCopy({ "uploads": "uploads" });
 
   // Add plugins
   config.addPlugin(pluginRss);

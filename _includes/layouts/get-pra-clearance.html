@@ -3,7 +3,6 @@ layout: layouts/page
 ---
 <script src="{{ '/assets/pizzip/dist/pizzip.min.js' | url }}"></script>
 <script src="{{ '/assets/docxtemplater/build/docxtemplater.min.js' | url }}"></script>
-<script src="{{ '/assets/pdf-lib/dist/pdf-lib.min.js' | url }}"></script>
 
 <div class="get-pra-clearance-wrapper static-content">
     <h1 class="margin-top-0">Get PRA clearance</h1>
@@ -294,7 +293,7 @@ layout: layouts/page
                 <!-- Collection Methods -->
                 <fieldset class="usa-fieldset">
                     <legend class="usa-legend">How will you collect information? <span class="usa-hint">*</span></legend>
-                    <span class="usa-hint">Helper text</span>
+                    <span class="usa-hint">Please select all that apply.</span>
                     <div class="usa-checkbox">
                         <input class="usa-checkbox__input" id="collection-web-based" type="checkbox" name="checkboxes"
                             value="Web-based or social media" required>
@@ -388,21 +387,76 @@ layout: layouts/page
                 </p>
             </div>
       
-          <!-- Step 3 -->
-          <div class="step" data-step-title="Burden estimate">
-            <p class="usa-hint">Add details for each category of respondents as needed.</p>
-            <div id="burdenRowsContainer">
+            <!-- Step 3 -->
+            <div class="step" data-step-title="Burden estimate">
+                <p class="usa-hint">Select the categories that apply and provide the required information for each.</p>   
+                <fieldset class="usa-fieldset">
+                    <legend class="usa-legend">Category of respondents <span class="usa-hint">*</span></legend>
+                    <div class="usa-checkbox">
+                        <input class="usa-checkbox__input category-checkbox" id="individuals-checkbox" type="checkbox" name="category" value="Individuals" />
+                        <label class="usa-checkbox__label" for="individuals-checkbox">Individuals or Households</label>
+                    </div>
+                    <!-- Inputs for each category -->
+                    <div id="Individuals-inputs" class="category-inputs" style="display: none;">
+                        <p>
+                            <label class="usa-label" for="numberOfRespondents-Individuals">Number of respondents *</label>
+                            <input class="usa-input dynamic-input" id="numberOfRespondents-Individuals" data-category="Individuals" type="number" />                            
+                        </p>
+                        <p>
+                            <label class="usa-label" for="participationTime-Individuals">Participation time (minutes) *</label>
+                            <input class="usa-input dynamic-input" id="participationTime-Individuals" data-category="Individuals" type="number" />
+                        </p>
+                    </div>
+                    <div class="usa-checkbox">
+                        <input class="usa-checkbox__input category-checkbox" id="private-checkbox" type="checkbox" name="category" value="PrivateSector" />
+                        <label class="usa-checkbox__label" for="private-checkbox">Private Sector</label>
+                    </div>
+                    <div id="PrivateSector-inputs" class="category-inputs" style="display: none;">
+                        <p>
+                            <label class="usa-label" for="numberOfRespondents-PrivateSector">Number of respondents *</label>
+                            <input class="usa-input dynamic-input" id="numberOfRespondents-PrivateSector" data-category="PrivateSector" type="number" />                        
+                        </p>
+                        <p>
+                            <label class="usa-label" for="participationTime-PrivateSector">Participation time (minutes) *</label>
+                            <input class="usa-input dynamic-input" id="participationTime-PrivateSector" data-category="PrivateSector" type="number" />
+                        </p>
+                    </div>
+                    <div class="usa-checkbox">
+                        <input class="usa-checkbox__input category-checkbox" id="state-checkbox" type="checkbox" name="category" value="StateLocal" />
+                        <label class="usa-checkbox__label" for="state-checkbox">State, local, or tribal governments</label>
+                    </div>
+                    <div id="StateLocal-inputs" class="category-inputs" style="display: none;">
+                        <p>
+                            <label class="usa-label" for="numberOfRespondents-StateLocal">Number of respondents *</label>
+                            <input class="usa-input dynamic-input" id="numberOfRespondents-StateLocal" data-category="StateLocal" type="number" />                    
+                        </p>
+                        <p>
+                            <label class="usa-label" for="participationTime-StateLocal">Participation time (minutes) *</label>
+                            <input class="usa-input dynamic-input" id="participationTime-StateLocal" data-category="StateLocal" type="number" />
+                        </p>
+                    </div>
+                    <div class="usa-checkbox">
+                        <input class="usa-checkbox__input category-checkbox" id="federal-checkbox" type="checkbox" name="category" value="Federal" />
+                        <label class="usa-checkbox__label" for="federal-checkbox">Federal Government</label>
+                    </div>
+                    <div id="Federal-inputs" class="category-inputs" style="display: none;">
+                        <p>
+                            <label class="usa-label" for="numberOfRespondents-Federal">Number of respondents *</label>
+                            <input class="usa-input dynamic-input" id="numberOfRespondents-Federal" data-category="Federal" type="number" />                  
+                        </p>
+                        <p>
+                            <label class="usa-label" for="participationTime-Federal">Participation time (minutes) *</label>
+                            <input class="usa-input dynamic-input" id="participationTime-Federal" data-category="Federal" type="number" />
+                        </p>
+                    </div>
+                </fieldset>
+        
+                <p class="text-right">
+                    <button type="button" class="usa-button usa-button--outline" onclick="previousStep()">Back</button>
+                    <button type="button" class="usa-button" onclick="nextStep()">Continue</button>
+                </p>
             </div>
-
-            <p class="text-right">    
-                <button type="button" class="usa-button usa-button--base" onclick="addBurdenRow()">Add Row</button>
-            </p>
             
-            <p class="text-right margin-top-5">
-                <button type="button" class="usa-button usa-button--outline" onclick="previousStep()">Back</button>
-                <button type="button" class="usa-button" onclick="nextStep()">Continue</button>  
-            </p>
-          </div>
       
           <!-- Step 4 -->
           <div class="step" data-step-title="Certification">
@@ -460,7 +514,7 @@ layout: layouts/page
 
                 <!-- This iframe content only loads in the cloud and not locally because it's a relative path -->
                 <iframe data-dynamic-src="{{ '/assets/documents/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx' | url }}" width="100%" height="600"></iframe>
-
+                
                 <p>Once you are satisfied with your ICR form, do the following:</p>
 
                 <ol class="pra-clearance-instructions">
@@ -510,6 +564,7 @@ layout: layouts/page
     </div> -->
     {{ content }}
 </div>
+
 {% capture icrFormWizardJs %}
 {% include "_includes/theme/js/icr-form-wizard.js" %}
 {% endcapture %}
