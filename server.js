@@ -11,23 +11,31 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, '_site'))); // Serve static files from the public folder
+app.use(express.static(path.join(__dirname, '_site'))); // Serve static files
 
 // Rate limiter middleware
 const limiter = RateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // max 100 requests per windowMs
+    max: 100, // Max 100 requests per windowMs
 });
 
 // Routes
-app.post('/generate-word', limiter, generateWord);
+app.post('/generate-word', limiter, (req, res, next) => {
+    console.log('POST /generate-word received');
+    try {
+        generateWord(req, res);
+    } catch (error) {
+        console.error('Error in /generate-word:', error);
+        res.status(500).send({ error: 'Failed to generate the document.' });
+    }
+});
 
-// Fallback route for undefined paths
+// Fallback route
 app.use((req, res) => {
-  res.status(404).send({ error: 'Route not found.' });
+    res.status(404).send({ error: 'Route not found.' });
 });
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
