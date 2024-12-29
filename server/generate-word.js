@@ -1,41 +1,55 @@
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
-const AWS = require('aws-sdk');
 
-// Configure AWS S3 using VCAP_SERVICES
+
 function configureS3() {
   const vcapServices = JSON.parse(process.env.VCAP_SERVICES || '{}');
   const s3Service = vcapServices['aws-s3']?.[0]?.credentials;
 
   if (!s3Service) {
-    throw new Error('AWS S3 credentials not found in VCAP_SERVICES.');
+      throw new Error('AWS S3 credentials not found in VCAP_SERVICES.');
   }
 
-  return new AWS.S3({
-    accessKeyId: s3Service.access_key_id,
-    secretAccessKey: s3Service.secret_access_key,
-    region: s3Service.region,
+  return new S3Client({
+      region: s3Service.region,
+      credentials: {
+          accessKeyId: s3Service.access_key_id,
+          secretAccessKey: s3Service.secret_access_key,
+      },
   });
 }
 
-// Initialize S3 client
 const s3 = configureS3();
+
+async function uploadToS3(bucketName, key, body) {
+  const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
+
+  await s3.send(command);
+  return `https://${bucketName}.s3.${s3.config.region}.amazonaws.com/${key}`;
+}
 
 module.exports = async (req, res) => {
   try {
     const formData = req.body;
 
-    // Correct template path
+    // Load Word template
     const templatePath = path.join(__dirname, '../_includes/theme/templates/ICR-Template_A11-Section-280-Clearance-v5-13-24.docx');
 
     if (!fs.existsSync(templatePath)) {
       throw new Error(`Template file not found at path: ${templatePath}`);
     }
+    const templateContent = fs.readFileSync(templatePath, 'binary');
 
-    const content = fs.readFileSync(templatePath, 'binary');
-    const zip = new PizZip(content);
+    // Initialize Docxtemplater
+    const zip = new PizZip(templateContent);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
@@ -72,6 +86,7 @@ module.exports = async (req, res) => {
       email: formData.email || '',
     };
 
+    // Render the template with the provided data
     try {
       doc.render(fieldMapping);
     } catch (error) {
@@ -81,21 +96,12 @@ module.exports = async (req, res) => {
     // Generate the document as a Buffer
     const documentBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // Define S3 upload parameters
-    const bucketName = process.env.AWS_S3_BUCKET || s3Service.bucket;
-    const fileName = `generated-${Date.now()}.docx`;
-    const s3Params = {
-      Bucket: bucketName,
-      Key: `uploads/${fileName}`,
-      Body: documentBuffer,
-      ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    };
-
-    // Upload to S3
-    const uploadResult = await s3.upload(s3Params).promise();
+    // Upload the document to S3
+    const fileName = `ICR-Template-${Date.now()}.docx`;
+    const fileUrl = await uploadToS3(process.env.S3_BUCKET_NAME, `uploads/${fileName}`, documentBuffer);
 
     // Respond with the S3 file URL
-    res.status(200).send({ fileUrl: uploadResult.Location });
+    res.status(200).send({ fileUrl });
   } catch (error) {
     console.error('Error in generate-word:', error);
     res.status(500).send({ error: 'Failed to generate document.' });

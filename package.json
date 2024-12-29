@@ -46,6 +46,7 @@
     "uglify-js": "^3.19.3"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.717.0",
     "@netlify/functions": "^2.8.2",
     "@uswds/uswds": "^3.11.0",
     "body-parser": "^1.20.3",
