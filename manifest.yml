@@ -1,5 +1,5 @@
 applications:
-- name: pra-app-2
+- name: pra-app
   buildpacks:
     - nodejs_buildpack
   memory: 256M
