@@ -8,6 +8,9 @@ const RateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Enable 'trust proxy' for proxies like Cloud.gov
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
@@ -21,15 +24,43 @@ const limiter = RateLimit({
 });
 
 // Routes
-app.post('/generate-word', limiter, (req, res, next) => {
+app.post('/generate-word', limiter, async (req, res) => {
     console.log('POST /generate-word received');
     console.log('Request body:', req.body);
   
     try {
-        generateWord(req, res);
+        await generateWord(req, res);
     } catch (error) {
         console.error('Error in /generate-word:', error);
-        res.status(500).send({ error: 'Failed to generate the document.' });
+        res.status(500).json({ 
+            success: false,
+            error: error.message || 'Failed to generate the document.',
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+// Add the S3 test endpoint here
+app.get('/test-s3', async (req, res) => {
+    try {
+        const { client: s3Client, bucketName } = configureS3();
+        
+        const testFile = Buffer.from('Hello World');
+        const testKey = `test-${Date.now()}.txt`;
+        
+        const uploadResult = await uploadToS3(bucketName, testKey, testFile);
+        
+        res.json({
+            success: true,
+            message: 'Test file uploaded successfully',
+            fileUrl: uploadResult
+        });
+    } catch (error) {
+        console.error('S3 test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 

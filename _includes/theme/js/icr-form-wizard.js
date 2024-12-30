@@ -176,13 +176,16 @@ function updateBurdenEstimate(category) {
     const participationTime = parseFloat(document.querySelector(`#participationTime-${category}`).value) || 0;
 
     const annualBurdenHours = (numberOfRespondents * participationTime) / 60;
+    
+    // Round to exactly 2 decimal places
+    const roundedBurdenHours = Number(Math.round(annualBurdenHours + 'e2') + 'e-2');
 
     // Update the burden estimates object
     burdenEstimates[category] = {
         categoryOfRespondents: category,
         numberOfRespondents,
         participationTime,
-        annualBurdenHours: Math.round(annualBurdenHours * 100) / 100, // Round to 2 decimals
+        annualBurdenHours: roundedBurdenHours
     };
 }
 
@@ -274,16 +277,16 @@ function updateFileInput() {
     // Update the file input with the new files
     fileInput.files = dataTransfer.files;
 }
-function setBooleanValue(value, targetValue) {
-    return value === targetValue ? '✓' : ' ';
-}
 
 function submitForm() {
     const form = document.getElementById('wizardForm');
     const formData = new FormData(form);
 
-    // Utility function to handle '✓' or ' ' for boolean fields
-    const setBooleanValue = (value, targetValue) => (value === targetValue ? '✓' : ' ');
+    // Clear existing burden estimates before adding new ones
+    burdenEstimates.length = 0;
+
+    // Utility function to handle checkmarks using Unicode character
+    const setBooleanValue = (value, targetValue) => (value === targetValue ? 'X' : ' ');
 
     // Extract checked checkboxes
     const checkboxes = Array.from(form.querySelectorAll('input[name="checkboxes"]:checked')).map(cb => cb.value);
@@ -293,40 +296,41 @@ function submitForm() {
     const surveyResults = form.querySelector('input[name="surveyResults"]:checked')?.value || '';
     const incentiveOptions = form.querySelector('input[name="incentiveOptions"]:checked')?.value || '';
 
-    // Dynamically populate burdenEstimates based on Step 3 inputs
+    // Populate burdenEstimates
     const categories = document.querySelectorAll('input[name="category"]:checked');
+    let hasValidBurdenEstimates = false;
+
     categories.forEach((category) => {
         const categoryName = category.value;
         const numberField = document.querySelector(`#numberOfRespondents-${categoryName}`);
         const timeField = document.querySelector(`#participationTime-${categoryName}`);
 
-        // Validate and add to burdenEstimates if valid
         if (numberField && timeField && numberField.value && timeField.value) {
             const numberOfRespondents = Number(numberField.value);
             const participationTime = Number(timeField.value);
 
-            // Perform validation for these fields
             if (numberOfRespondents > 0 && participationTime > 0) {
                 const annualBurdenHours = (numberOfRespondents * participationTime) / 60;
                 burdenEstimates.push({
                     categoryOfRespondents: categoryName,
                     numberOfRespondents,
                     participationTime,
-                    annualBurdenHours,
+                    annualBurdenHours: Math.round(annualBurdenHours * 100) / 100 // Round to 2 decimals
                 });
+                hasValidBurdenEstimates = true;
             }
         }
     });
 
-    if (burdenEstimates.length === 0) {
+    if (!hasValidBurdenEstimates) {
         alert("Please fill out the Burden Estimates step completely.");
         return;
     }
 
-    // Calculate totals for the burden estimates
+    // Calculate totals
     const totalNumberOfRespondents = burdenEstimates.reduce((sum, row) => sum + row.numberOfRespondents, 0);
     const totalParticipationTime = burdenEstimates.reduce((sum, row) => sum + row.participationTime, 0);
-    const totalAnnualBurdenHours = burdenEstimates.reduce((sum, row) => sum + row.annualBurdenHours, 0);
+    const totalAnnualBurdenHours = Number(Math.round((burdenEstimates.reduce((sum, row) => sum + row.annualBurdenHours, 0)) + 'e2') + 'e-2');
 
     const payload = {
         title: formData.get('title'),
@@ -337,11 +341,11 @@ function submitForm() {
         surveyResultsYes: setBooleanValue(surveyResults, 'Yes'),
         surveyResultsNo: setBooleanValue(surveyResults, 'No'),
         notASurvey: setBooleanValue(surveyResults, 'Not a survey'),
-        webBased: checkboxes.includes('Web-based or social media') ? '✓' : ' ',
-        telephone: checkboxes.includes('Telephone') ? '✓' : ' ',
-        inPerson: checkboxes.includes('In-person') ? '✓' : ' ',
-        mail: checkboxes.includes('Mail') ? '✓' : ' ',
-        other: checkboxes.includes('Other') ? '✓' : ' ',
+        webBased: setBooleanValue(checkboxes.includes('Web-based or social media'), true),
+        telephone: setBooleanValue(checkboxes.includes('Telephone'), true),
+        inPerson: setBooleanValue(checkboxes.includes('In-person'), true),
+        mail: setBooleanValue(checkboxes.includes('Mail'), true),
+        other: setBooleanValue(checkboxes.includes('Other'), true),
         collectInfoFrom: formData.get('collectInfoFrom'),
         respondentProvideInfo: formData.get('respondentProvideInfo'),
         activityLookLike: formData.get('activityLookLike'),
@@ -358,11 +362,13 @@ function submitForm() {
         email: formData.get('email'),
     };
 
-    console.log('Checkboxes:', checkboxes);
-    console.log('Radio Selection:', radioSelection);
-    console.log('Payload:', payload);
     console.log('Payload before sending:', JSON.stringify(payload, null, 2));
-    console.log('test that all is updated');
+
+    // Add loading state to submit button
+    const submitButton = document.querySelector('button[onclick="submitForm()"]');
+    const originalButtonText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Generating Document...';
 
     fetch('/generate-word', {
         method: 'POST',
@@ -371,24 +377,54 @@ function submitForm() {
         },
         body: JSON.stringify(payload),
     })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.fileUrl) {
+    .then(async (response) => {
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to generate document');
+        }
+  
+        if (!data.success || !data.fileUrl) {
+            throw new Error('Invalid server response: missing fileUrl');
+        }
+  
         const previewIframe = document.querySelector('iframe[data-dynamic-src]');
         if (previewIframe) {
-          previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
+            // Create a promise that resolves when iframe loads
+            const iframeLoadPromise = new Promise((resolve, reject) => {
+                previewIframe.onload = () => resolve();
+                previewIframe.onerror = () => reject(new Error('Failed to load preview'));
+                
+                // Set a timeout in case loading takes too long
+                setTimeout(() => reject(new Error('Preview loading timed out')), 90000);
+            });
+    
+            // Set the iframe source
+            previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
+    
+            // Wait for iframe to load before proceeding
+            try {
+                await iframeLoadPromise;
+                
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = data.fileUrl;
+                downloadLink.textContent = 'Download Completed Document';
+                
+                // Only move to next step after successful iframe load
+                nextStep();
+            } catch (error) {
+                throw new Error(`Failed to load preview: ${error.message}`);
+            }
         }
-
-        const downloadLink = document.getElementById('downloadLink');
-        downloadLink.href = data.fileUrl;
-        downloadLink.textContent = 'Download Completed Document';
-      } else {
-        throw new Error('File URL not returned.');
-      }
     })
     .catch((error) => {
-      console.error('Error generating document:', error);
-      alert('There was an error generating your document. Please try again.');
+        console.error('Error generating document:', error);
+        alert(`Error: ${error.message}. Please click the "Back" button and try submitting the form again or contact support if the problem persists.`);
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
     });
 }
 
@@ -398,9 +434,9 @@ function sendEmail() {
     const emailSubject = `${userName} - ICR Package (A-11 Section 280) for Pre-review`;
     const emailBody = `Dear Todd,
     
-    ${userName} is seeking Fast Track (A-11 Section 280) PRA clearance for our upcoming user research. Our completed ICR package is attached to this email for your pre-review. Please let us know if you have any questions, and we will look forward to your feedback.
+${userName} is seeking Fast Track (A-11 Section 280) PRA clearance for our upcoming user research. Our completed ICR package is attached to this email for your pre-review. Please let us know if you have any questions, and we will look forward to your feedback.
     
-    Thank you.`;
+Thank you.`;
 
     const mailtoLink = document.getElementById("mailtoLink");
     mailtoLink.href = `mailto:Todd.W.Rubin2@omb.eop.gov?cc=tts-research@gsa.gov&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;    

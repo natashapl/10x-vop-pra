@@ -7,5 +7,9 @@ applications:
   instances: 1
   random-route: true
   command: node server.js
+  env:
+    S3_BUCKET_NAME: "pra-navigator-storage"
+    S3_REGION: "us-gov-west-1"
+    S3_ENDPOINT: "s3-fips.us-gov-west-1.amazonaws.com"
   services:
     - pra-navigator-storage
