@@ -370,7 +370,7 @@ function submitForm() {
     submitButton.disabled = true;
     submitButton.textContent = 'Generating Document...';
 
-    fetch('/generate-word', {
+    fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/generate-word', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
