@@ -11,38 +11,5 @@ applications:
     S3_BUCKET_NAME: "pra-navigator-storage"
     S3_REGION: "us-gov-west-1"
     S3_ENDPOINT: "s3-fips.us-gov-west-1.amazonaws.com"
-    STRATOS_PROJECT:
-      {
-        "deploySource": {
-          "type": "gitscm",
-          "timestamp": 1735556560,
-          "project": "GSA-TTS/10x-vop-pra",
-          "branch": "pra-navigator-version-2",
-          "url": "https://github.com/GSA-TTS/10x-vop-pra.git",
-          "commit": "fd4b5bb35bb6fdfb7f5a6720b02ea537935249a1",
-          "scm": "github",
-          "endpointGuid": "",
-          "username": ""
-        },
-        "deployOverrides": {
-          "name": "pra-app-2",
-          "buildpack": "",
-          "startCmd": "",
-          "healthCheckType": "",
-          "stack": "",
-          "time": null,
-          "instances": 1,
-          "diskQuota": "",
-          "memQuota": "",
-          "doNotStart": false,
-          "noRoute": false,
-          "randomRoute": false,
-          "host": "",
-          "domain": "",
-          "path": "",
-          "dockerImage": "",
-          "dockerUsername": ""
-        }
-      }
   services:
     - pra-navigator-storage
