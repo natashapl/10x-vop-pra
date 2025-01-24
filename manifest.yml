@@ -13,3 +13,4 @@ applications:
     S3_ENDPOINT: "s3-fips.us-gov-west-1.amazonaws.com"
   services:
     - pra-navigator-storage
+    - pra-form-progress

@@ -270,7 +270,7 @@ async function saveProgress() {
     });
 
     try {
-        const response = await fetch('/save-progress', {
+        const response = await fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/save-progress', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ async function saveProgress() {
 
 async function loadProgress(token) {
     try {
-        const response = await fetch(`/load-progress/${token}`);
+        const response = await fetch(`https://pra-app-intelligent-quokka-qi.app.cloud.gov/load-progress/${token}`);
         if (!response.ok) throw new Error('Failed to load progress');
         
         const data = await response.json();
@@ -379,6 +379,12 @@ async function loadProgress(token) {
         if (typeof data.currentStep === 'number') {
             currentStep = data.currentStep;
             showStep(currentStep);
+
+            // Scroll to the wizard section
+            const wizardSection = document.querySelector('.icr-form-builder-section');
+            if (wizardSection) {
+                wizardSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     } catch (error) {
         console.error('Error loading progress:', error);
@@ -398,14 +404,19 @@ function setupAutosave() {
     });
 }
 
-
 // Show the first step on page load
 document.addEventListener("DOMContentLoaded",() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionToken = urlParams.get('session');
 
     if (sessionToken) {
-        loadProgress(sessionToken);
+        loadProgress(sessionToken).then(() => {
+            // Scroll after loading progress
+            const wizardSection = document.querySelector('.icr-form-builder-section');
+            if (wizardSection) {
+                wizardSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
     } else {
         showStep(currentStep);
     }

@@ -96,32 +96,28 @@ async function initializeS3Security() {
 async function cleanupOldFiles(s3Client, bucketName) {
     try {
         console.log('Starting cleanup of old files...');
-        
         const command = new ListObjectsV2Command({
             Bucket: bucketName,
             Prefix: 'uploads/'
         });
 
         const response = await s3Client.send(command);
-        const now = Date.now();
+        if (!response.Contents) return;
+
+        const now = new Date();
         const oneDayInMs = 24 * 60 * 60 * 1000;
 
-        for (const object of response.Contents || []) {
-            const fileAge = now - object.LastModified.getTime();
-            
-            if (fileAge > oneDayInMs) {
-                const deleteCommand = new DeleteObjectCommand({
+        for (const object of response.Contents) {
+            if (object.LastModified && (now.getTime() - new Date(object.LastModified).getTime()) > oneDayInMs) {
+                await s3Client.send(new DeleteObjectCommand({
                     Bucket: bucketName,
                     Key: object.Key
-                });
-                
-                await s3Client.send(deleteCommand);
+                }));
                 console.log(`Deleted old file: ${object.Key}`);
             }
         }
-        console.log('Cleanup completed successfully');
     } catch (error) {
-        console.error('Error cleaning up old files:', error);
+        console.error('Error cleaning up files:', error);
     }
 }
 
@@ -130,43 +126,23 @@ async function uploadToS3(bucketName, key, body) {
     console.log('Attempting to upload to S3...', { bucketName, key });
 
     try {
-        // Clean up old files first
-        await cleanupOldFiles(s3Client, bucketName);
-
         const command = new PutObjectCommand({
             Bucket: bucketName,
             Key: key,
             Body: body,
             ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ACL: 'public-read',
-            CacheControl: 'no-cache, no-store, must-revalidate',
-            Expires: 0,
-            Metadata: {
-                'robots': 'noindex, nofollow'
-            }
+            CacheControl: 'no-cache, no-store, must-revalidate'
         });
 
         await s3Client.send(command);
-
-        // Generate signed URL that expires in 24 hours
-        const getCommand = new GetObjectCommand({
-            Bucket: bucketName,
-            Key: key
-        });
-        
-        const signedUrl = await getSignedUrl(s3Client, getCommand, { 
-            expiresIn: 24 * 60 * 60 
-        });
+        const getCommand = new GetObjectCommand({ Bucket: bucketName, Key: key });
+        const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 24 * 60 * 60 });
 
         console.log('Generated signed URL:', signedUrl);
         return signedUrl;
     } catch (error) {
-        console.error('S3 upload error details:', {
-            error: error.message,
-            stack: error.stack,
-            bucket: bucketName,
-            key: key
-        });
+        console.error('S3 upload error details:', error);
         throw error;
     }
 }
