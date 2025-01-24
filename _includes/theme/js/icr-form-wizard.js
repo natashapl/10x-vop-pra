@@ -8,6 +8,10 @@ const fileListDiv = document.getElementById('file-list');
 let uploadedFiles = [];
 let documentBlobUrl = null; 
 const burdenEstimates = [];
+let formToken = null;
+const AUTOSAVE_DELAY = 1000; // 1 second
+let autosaveTimeout = null;
+let isSubmitting = false; 
 
 function showStep(step) {
     steps.forEach((element,index) => {
@@ -38,8 +42,6 @@ function validateStep(step) {
     const stepElement = steps[step];
     const inputs = stepElement.querySelectorAll("input, textarea, select");
     let firstInvalidField = null;
-    const burdenEstimates = [];
-
 
     // Remove previous error messages
     function cleanupErrors(input, parentContainer) {
@@ -166,8 +168,17 @@ function toggleCategoryInputs(category, isChecked) {
         container.style.display = "block";
     } else {
         container.style.display = "none";
-        // Reset the values when unchecked
-        delete burdenEstimates[category];
+        // Remove the estimate for this category
+        const index = burdenEstimates.findIndex(e => e.categoryOfRespondents === category);
+        if (index > -1) {
+            burdenEstimates.splice(index, 1);
+        }
+        
+        // Clear the input values
+        const numberField = document.querySelector(`#numberOfRespondents-${category}`);
+        const timeField = document.querySelector(`#participationTime-${category}`);
+        if (numberField) numberField.value = '';
+        if (timeField) timeField.value = '';
     }
 }
 
@@ -180,13 +191,26 @@ function updateBurdenEstimate(category) {
     // Round to exactly 2 decimal places
     const roundedBurdenHours = Number(Math.round(annualBurdenHours + 'e2') + 'e-2');
 
-    // Update the burden estimates object
-    burdenEstimates[category] = {
-        categoryOfRespondents: category,
-        numberOfRespondents,
-        participationTime,
-        annualBurdenHours: roundedBurdenHours
-    };
+    // Find existing estimate or create new one
+    let estimate = burdenEstimates.find(e => e.categoryOfRespondents === category);
+    if (!estimate) {
+        estimate = {
+            categoryOfRespondents: category,
+            numberOfRespondents: 0,
+            participationTime: 0,
+            annualBurdenHours: 0
+        };
+        burdenEstimates.push(estimate);
+    }
+
+    // Update the values
+    estimate.numberOfRespondents = numberOfRespondents;
+    estimate.participationTime = participationTime;
+    estimate.annualBurdenHours = roundedBurdenHours;
+
+    // Trigger autosave
+    if (autosaveTimeout) clearTimeout(autosaveTimeout);
+    autosaveTimeout = setTimeout(saveProgress, AUTOSAVE_DELAY);
 }
 
 document.querySelectorAll(".category-checkbox").forEach((checkbox) => {
@@ -221,8 +245,172 @@ function previousStep() {
     }
 }
 
+async function saveProgress() {
+    const form = document.getElementById('wizardForm');
+    const data = {
+        formFields: {},
+        currentStep,
+        burdenEstimates: Array.from(burdenEstimates), // Convert to regular array
+        checkboxes: Array.from(form.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value),
+        radioSelections: {}
+    };
+    
+    // Get all form field values
+    const formData = new FormData(form);
+    for (let [key, value] of formData.entries()) {
+        data.formFields[key] = value;
+    }
+
+    // Get radio selections
+    ['radioSelection', 'surveyResults', 'incentiveOptions'].forEach(name => {
+        const selected = form.querySelector(`input[name="${name}"]:checked`);
+        if (selected) {
+            data.radioSelections[name] = selected.value;
+        }
+    });
+
+    try {
+        const response = await fetch('/save-progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                token: formToken,
+                formData: data
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!formToken) {
+            formToken = result.token;
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('session', formToken);
+            window.history.pushState({}, '', newUrl);
+        }
+    } catch (error) {
+        console.error('Error saving progress:', error);
+    }
+}
+
+async function loadProgress(token) {
+    try {
+        const response = await fetch(`/load-progress/${token}`);
+        if (!response.ok) throw new Error('Failed to load progress');
+        
+        const data = await response.json();
+        formToken = token;
+
+        const form = document.getElementById('wizardForm');
+        
+        // Restore form fields
+        if (data.formFields) {
+            Object.entries(data.formFields).forEach(([key, value]) => {
+                const input = form.elements[key];
+                if (input) {
+                    input.value = value;
+                }
+            });
+        }
+
+        // Restore checkboxes
+        if (data.checkboxes) {
+            data.checkboxes.forEach(value => {
+                const checkbox = form.querySelector(`input[type="checkbox"][value="${value}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    // Trigger change event for any dependent UI updates
+                    const event = new Event('change', { bubbles: true });
+                    checkbox.dispatchEvent(event);
+                }
+            });
+        }
+
+        // Restore radio selections
+        if (data.radioSelections) {
+            Object.entries(data.radioSelections).forEach(([name, value]) => {
+                const radio = form.querySelector(`input[name="${name}"][value="${value}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    // Trigger change event for any dependent UI updates
+                    const event = new Event('change', { bubbles: true });
+                    radio.dispatchEvent(event);
+                }
+            });
+        }
+
+        // Restore burden estimates
+        if (data.burdenEstimates && Array.isArray(data.burdenEstimates)) {
+            burdenEstimates.length = 0;
+            data.burdenEstimates.forEach(estimate => burdenEstimates.push(estimate));
+            
+            // Restore UI state for burden estimates
+            data.burdenEstimates.forEach(estimate => {
+                if (estimate.categoryOfRespondents) {
+                    const checkbox = form.querySelector(`input[type="checkbox"][value="${estimate.categoryOfRespondents}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        toggleCategoryInputs(estimate.categoryOfRespondents, true);
+                        
+                        const numberField = document.querySelector(`#numberOfRespondents-${estimate.categoryOfRespondents}`);
+                        const timeField = document.querySelector(`#participationTime-${estimate.categoryOfRespondents}`);
+                        
+                        if (numberField) numberField.value = estimate.numberOfRespondents;
+                        if (timeField) timeField.value = estimate.participationTime;
+                    }
+                }
+            });
+
+            document.querySelectorAll(".dynamic-input").forEach((input) => {
+                input.addEventListener("input", (e) => {
+                    const category = e.target.dataset.category;
+                    updateBurdenEstimate(category);
+                });
+                // Add change event listener as well
+                input.addEventListener("change", (e) => {
+                    if (autosaveTimeout) clearTimeout(autosaveTimeout);
+                    autosaveTimeout = setTimeout(saveProgress, AUTOSAVE_DELAY);
+                });
+            });
+        }
+
+        // Restore current step
+        if (typeof data.currentStep === 'number') {
+            currentStep = data.currentStep;
+            showStep(currentStep);
+        }
+    } catch (error) {
+        console.error('Error loading progress:', error);
+    }
+}
+
+// Add autosave functionality
+function setupAutosave() {
+    const form = document.getElementById('wizardForm');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', () => {
+            if (autosaveTimeout) clearTimeout(autosaveTimeout);
+            autosaveTimeout = setTimeout(saveProgress, AUTOSAVE_DELAY);
+        });
+    });
+}
+
+
 // Show the first step on page load
 document.addEventListener("DOMContentLoaded",() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('session');
+
+    if (sessionToken) {
+        loadProgress(sessionToken);
+    } else {
+        showStep(currentStep);
+    }
+
+    setupAutosave();
     showStep(currentStep);
 });
 
@@ -279,8 +467,29 @@ function updateFileInput() {
 }
 
 function submitForm() {
-    const form = document.getElementById('wizardForm');
-    const formData = new FormData(form);
+    // Prevent double submission
+    if (isSubmitting) {
+        console.log('Form submission already in progress');
+        return;
+    }
+
+    console.log('Starting form submission process...');
+    isSubmitting = true;
+
+    const submitButton = document.querySelector('button[onclick="submitForm()"]');
+    const originalButtonText = submitButton.textContent;
+    
+    try {
+        // Add submission timestamp for tracking
+        const submissionId = Date.now();
+        console.log(`Submission ID: ${submissionId} started`);
+
+        const form = document.getElementById('wizardForm');
+        const formData = new FormData(form);
+
+        // Log the current state
+        console.log('Current step:', currentStep);
+        console.log('Burden estimates:', burdenEstimates);
 
     // Clear existing burden estimates before adding new ones
     burdenEstimates.length = 0;
@@ -362,70 +571,90 @@ function submitForm() {
         email: formData.get('email'),
     };
 
-    console.log('Payload before sending:', JSON.stringify(payload, null, 2));
-
     // Add loading state to submit button
     const submitButton = document.querySelector('button[onclick="submitForm()"]');
     const originalButtonText = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = 'Generating Document...';
 
-    fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/generate-word', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    })
-    .then(async (response) => {
-        const data = await response.json();
+        console.log(`Submission ${submissionId}: Preparing to send fetch request`);
         
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to generate document');
-        }
-  
-        if (!data.success || !data.fileUrl) {
-            throw new Error('Invalid server response: missing fileUrl');
-        }
-  
-        const previewIframe = document.querySelector('iframe[data-dynamic-src]');
-        if (previewIframe) {
-            // Create a promise that resolves when iframe loads
-            const iframeLoadPromise = new Promise((resolve, reject) => {
-                previewIframe.onload = () => resolve();
-                previewIframe.onerror = () => reject(new Error('Failed to load preview'));
-                
-                // Set a timeout in case loading takes too long
-                setTimeout(() => reject(new Error('Preview loading timed out')), 90000);
+        fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/generate-word', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(async (response) => {
+            console.log(`Submission ${submissionId}: Received response`, {
+                status: response.status,
+                statusText: response.statusText
             });
-    
-            // Set the iframe source
-            previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
-    
-            // Wait for iframe to load before proceeding
-            try {
-                await iframeLoadPromise;
-                
-                const downloadLink = document.getElementById('downloadLink');
-                downloadLink.href = data.fileUrl;
-                downloadLink.textContent = 'Download Completed Document';
-                
-                // Only move to next step after successful iframe load
-                nextStep();
-            } catch (error) {
-                throw new Error(`Failed to load preview: ${error.message}`);
+
+            const data = await response.json();
+            console.log(`Submission ${submissionId}: Parsed response data`, data);
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to generate document');
             }
-        }
-    })
-    .catch((error) => {
-        console.error('Error generating document:', error);
-        alert(`Error: ${error.message}. Please click the "Back" button and try submitting the form again or contact support if the problem persists.`);
-    })
-    .finally(() => {
-        // Reset button state
+      
+            if (!data.success || !data.fileUrl) {
+                throw new Error('Invalid server response: missing fileUrl');
+            }
+      
+            const previewIframe = document.querySelector('iframe[data-dynamic-src]');
+            if (previewIframe) {
+                console.log(`Submission ${submissionId}: Setting up iframe preview`);
+                
+                const iframeLoadPromise = new Promise((resolve, reject) => {
+                    previewIframe.onload = () => {
+                        console.log(`Submission ${submissionId}: Iframe loaded successfully`);
+                        resolve();
+                    };
+                    previewIframe.onerror = (error) => {
+                        console.error(`Submission ${submissionId}: Iframe loading failed`, error);
+                        reject(new Error('Failed to load preview'));
+                    };
+                    
+                    setTimeout(() => {
+                        console.log(`Submission ${submissionId}: Iframe load timeout`);
+                        reject(new Error('Preview loading timed out'));
+                    }, 90000);
+                });
+        
+                previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
+        
+                try {
+                    await iframeLoadPromise;
+                    
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = data.fileUrl;
+                    downloadLink.textContent = 'Download Completed Document';
+                    
+                    console.log(`Submission ${submissionId}: Moving to next step`);
+                    nextStep();
+                } catch (error) {
+                    throw new Error(`Failed to load preview: ${error.message}`);
+                }
+            }
+        })
+        .catch((error) => {
+            console.error(`Submission ${submissionId}: Error occurred`, error);
+            alert(`Error: ${error.message}. Please click the "Back" button and try submitting the form again or contact support if the problem persists.`);
+        })
+        .finally(() => {
+            console.log(`Submission ${submissionId}: Completed`);
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+            isSubmitting = false;
+        });
+    } catch (error) {
+        console.error('Error in submit process:', error);
         submitButton.disabled = false;
         submitButton.textContent = originalButtonText;
-    });
+        isSubmitting = false;
+    }
 }
 
 function sendEmail() {

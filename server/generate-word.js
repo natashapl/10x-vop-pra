@@ -1,5 +1,12 @@
 require('dotenv').config();
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { 
+    S3Client, 
+    PutObjectCommand, 
+    ListObjectsV2Command, 
+    DeleteObjectCommand,
+    GetObjectCommand 
+} = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const fs = require('fs');
 const path = require('path');
 const PizZip = require('pizzip');
@@ -7,107 +14,165 @@ const Docxtemplater = require('docxtemplater');
 
 // Configure S3
 function configureS3() {
-  console.log('Starting S3 configuration...');
-  
-  try {
-      const vcapServices = process.env.VCAP_SERVICES;
-      console.log('VCAP_SERVICES raw:', vcapServices);
-      
-      if (!vcapServices) {
-          throw new Error('VCAP_SERVICES environment variable is missing');
-      }
+    console.log('Starting S3 configuration...');
+    
+    try {
+        const vcapServices = process.env.VCAP_SERVICES;
+        console.log('VCAP_SERVICES raw:', vcapServices);
+        
+        if (!vcapServices) {
+            throw new Error('VCAP_SERVICES environment variable is missing');
+        }
 
-      const parsedServices = JSON.parse(vcapServices);
-      console.log('Parsed VCAP_SERVICES:', parsedServices);
-      
-      if (!parsedServices.s3 || !parsedServices.s3[0]) {
-          throw new Error('S3 service configuration not found in VCAP_SERVICES');
-      }
+        const parsedServices = JSON.parse(vcapServices);
+        // Update this line to show the full object structure
+        console.log('Parsed VCAP_SERVICES:', JSON.stringify(parsedServices, null, 2));
+        
+        if (!parsedServices.s3 || !parsedServices.s3[0]) {
+            throw new Error('S3 service configuration not found in VCAP_SERVICES');
+        }
 
-      const s3Config = parsedServices.s3[0].credentials;
-      
-      if (!s3Config) {
-          throw new Error('AWS S3 credentials not found in VCAP_SERVICES');
-      }
+        const s3Config = parsedServices.s3[0].credentials;
 
-      // Get base endpoint and ensure it has https://
-      let endpoint = s3Config.fips_endpoint || s3Config.endpoint;
-      if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
-          endpoint = `https://${endpoint}`;
-      }
+        // Get base endpoint and ensure it has https://
+        let endpoint = s3Config.fips_endpoint || s3Config.endpoint;
+        if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+            endpoint = `https://${endpoint}`;
+        }
 
-      console.log('S3 Configuration:', {
-          endpoint: endpoint,
-          region: s3Config.region,
-          bucket: s3Config.bucket
-      });
+        // Log the config (but remove sensitive data)
+        console.log('S3 Configuration:', JSON.stringify({
+            endpoint: s3Config.fips_endpoint || s3Config.endpoint,
+            region: s3Config.region,
+            bucket: s3Config.bucket
+        }, null, 2));
 
-      return {
-          client: new S3Client({
-              endpoint: endpoint,
-              region: s3Config.region,
-              credentials: {
-                  accessKeyId: s3Config.access_key_id,
-                  secretAccessKey: s3Config.secret_access_key,
-              },
-              forcePathStyle: true
-          }),
-          bucketName: s3Config.bucket,
-      };
-  } catch (error) {
-      console.error('Error configuring S3:', error);
-      throw error;
-  }
+        return {
+            client: new S3Client({
+                endpoint: endpoint,
+                region: s3Config.region,
+                credentials: {
+                    accessKeyId: s3Config.access_key_id,
+                    secretAccessKey: s3Config.secret_access_key,
+                },
+                forcePathStyle: true
+            }),
+            bucketName: s3Config.bucket,
+        };
+    } catch (error) {
+        console.error('Error configuring S3:', error);
+        throw error;
+    }
 }
 
 const { client: s3Client, bucketName } = configureS3();
 
+// Function to add robots.txt
+async function addRobotsTxt(s3Client, bucketName) {
+    const robotsContent = `User-agent: *
+Disallow: /uploads/`;
+    
+    const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: 'robots.txt',
+        Body: robotsContent,
+        ContentType: 'text/plain'
+    });
+    
+    await s3Client.send(command);
+}
+
+// Initialize S3 security
+async function initializeS3Security() {
+    try {
+        await addRobotsTxt(s3Client, bucketName);
+        console.log('Added robots.txt to bucket');
+    } catch (error) {
+        console.error('Error adding robots.txt:', error);
+    }
+}
+
+// Function to clean up old files
+async function cleanupOldFiles(s3Client, bucketName) {
+    try {
+        console.log('Starting cleanup of old files...');
+        
+        const command = new ListObjectsV2Command({
+            Bucket: bucketName,
+            Prefix: 'uploads/'
+        });
+
+        const response = await s3Client.send(command);
+        const now = Date.now();
+        const oneDayInMs = 24 * 60 * 60 * 1000;
+
+        for (const object of response.Contents || []) {
+            const fileAge = now - object.LastModified.getTime();
+            
+            if (fileAge > oneDayInMs) {
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: bucketName,
+                    Key: object.Key
+                });
+                
+                await s3Client.send(deleteCommand);
+                console.log(`Deleted old file: ${object.Key}`);
+            }
+        }
+        console.log('Cleanup completed successfully');
+    } catch (error) {
+        console.error('Error cleaning up old files:', error);
+    }
+}
+
 // Upload to S3
 async function uploadToS3(bucketName, key, body) {
-  console.log('Attempting to upload to S3...', { bucketName, key });
+    console.log('Attempting to upload to S3...', { bucketName, key });
 
-  const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      Body: body,
-      ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      ACL: 'public-read'
-  });
+    try {
+        // Clean up old files first
+        await cleanupOldFiles(s3Client, bucketName);
 
-  try {
-      await s3Client.send(command);
+        const command = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: key,
+            Body: body,
+            ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ACL: 'public-read',
+            CacheControl: 'no-cache, no-store, must-revalidate',
+            Expires: 0,
+            Metadata: {
+                'robots': 'noindex, nofollow'
+            }
+        });
 
-      // Get the region configuration
-      let region = s3Client.config.region;
-      let resolvedRegion;
+        await s3Client.send(command);
 
-      // Handle different types of region values
-      if (typeof region === 'function') {
-          resolvedRegion = await region();
-      } else if (typeof region === 'object' && region.promise) {
-          resolvedRegion = await region.promise();
-      } else if (typeof region === 'string') {
-          resolvedRegion = region;
-      } else {
-          resolvedRegion = 'us-gov-west-1'; // Default fallback
-      }
+        // Generate signed URL that expires in 24 hours
+        const getCommand = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: key
+        });
+        
+        const signedUrl = await getSignedUrl(s3Client, getCommand, { 
+            expiresIn: 24 * 60 * 60 
+        });
 
-      console.log('Resolved region:', resolvedRegion);
-
-      const fileUrl = `https://${bucketName}.s3.${resolvedRegion}.amazonaws.com/${key}`;
-      console.log('Generated file URL:', fileUrl);
-      
-      return fileUrl;
-  } catch (error) {
-      console.error('S3 upload error details:', {
-          error: error.message,
-          stack: error.stack,
-          bucket: bucketName,
-          key: key
-      });
-      throw error;
-  }
+        console.log('Generated signed URL:', signedUrl);
+        return signedUrl;
+    } catch (error) {
+        console.error('S3 upload error details:', {
+            error: error.message,
+            stack: error.stack,
+            bucket: bucketName,
+            key: key
+        });
+        throw error;
+    }
 }
+
+// Initialize security when module is loaded
+initializeS3Security().catch(console.error);
 
 module.exports = async (req, res) => {
     try {
@@ -187,10 +252,10 @@ module.exports = async (req, res) => {
 
         // Respond with the S3 file URL
         return res.status(200).json({ 
-          success: true,
-          fileUrl: fileUrl,
-          filename: fileName
-      });
+            success: true,
+            fileUrl: fileUrl,
+            filename: fileName
+        });
     } catch (error) {
         console.error('Error in generate-word:', error);
         return res.status(500).json({ 
@@ -198,5 +263,5 @@ module.exports = async (req, res) => {
             error: error.message || 'Failed to process the request',
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
-  }
+    }
 };
