@@ -616,39 +616,48 @@ function submitForm() {
       
             const previewIframe = document.querySelector('iframe[data-dynamic-src]');
             if (previewIframe) {
-                console.log(`Submission ${submissionId}: Setting up iframe preview`);
-                
-                const iframeLoadPromise = new Promise((resolve, reject) => {
-                    previewIframe.onload = () => {
-                        console.log(`Submission ${submissionId}: Iframe loaded successfully`);
-                        resolve();
-                    };
-                    previewIframe.onerror = (error) => {
-                        console.error(`Submission ${submissionId}: Iframe loading failed`, error);
-                        reject(new Error('Failed to load preview'));
-                    };
-                    
-                    setTimeout(() => {
-                        console.log(`Submission ${submissionId}: Iframe load timeout`);
-                        reject(new Error('Preview loading timed out'));
-                    }, 90000);
-                });
-        
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = data.fileUrl;
+                downloadLink.textContent = 'Download Completed Document';
+             
+                // Initial load
                 previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;
-        
-                try {
-                    await iframeLoadPromise;
-                    
-                    const downloadLink = document.getElementById('downloadLink');
-                    downloadLink.href = data.fileUrl;
-                    downloadLink.textContent = 'Download Completed Document';
-                    
-                    console.log(`Submission ${submissionId}: Moving to next step`);
-                    nextStep();
-                } catch (error) {
-                    throw new Error(`Failed to load preview: ${error.message}`);
-                }
-            }
+             
+                // Check if content loaded after 2 seconds
+                setTimeout(() => {
+                    try {
+                        const hasContent = previewIframe.contentWindow.document.body.scrollHeight > 100;
+                        if (!hasContent) {
+                            // Start periodic check if no content
+                            let attempts = 0;
+                            const maxAttempts = 10;
+                            const checkInterval = setInterval(() => {
+                                try {
+                                    if (previewIframe.contentWindow.document.body.scrollHeight > 100 || attempts >= maxAttempts) {
+                                        clearInterval(checkInterval);
+                                        if (attempts >= maxAttempts) {
+                                            previewIframe.srcdoc = `
+                                                <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;font-family:sans-serif;text-align:center;">
+                                                    <p>Preview could not be loaded. Your document has been generated successfully.</p>
+                                                    <p>Please click the download button above to view your document.</p>
+                                                </div>`;
+                                        }
+                                        return;
+                                    }
+                                    previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true&rand=${Date.now()}`;
+                                    attempts++;
+                                } catch (e) {
+                                    console.log('Loading attempt ' + attempts + ': ' + e.message);
+                                }
+                            }, 2000);
+                        }
+                    } catch (e) {
+                        console.log('Initial content check error: ' + e.message);
+                    }
+                }, 2000);
+             
+                nextStep();
+             }
         })
         .catch((error) => {
             console.error(`Submission ${submissionId}: Error occurred`, error);
