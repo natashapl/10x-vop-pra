@@ -11,6 +11,7 @@ const yaml = require("js-yaml");
 const svgSprite = require("eleventy-plugin-svg-sprite");
 const { imageShortcode, imageWithClassShortcode } = require("./config");
 const fullUrlFilter = require('./_filters/fullUrl.js');
+const generalPlugin = require("./config/generalPlugin.js");
 
 module.exports = function (config) {
   // Set pathPrefix for site
@@ -71,6 +72,7 @@ module.exports = function (config) {
   // Add plugins
   config.addPlugin(pluginRss);
   config.addPlugin(pluginNavigation);
+  config.addPlugin(generalPlugin);
 
   //// SVG Sprite Plugin for USWDS USWDS icons
   config.addPlugin(svgSprite, {
@@ -88,6 +90,7 @@ module.exports = function (config) {
 
   // Allow yaml to be used in the _data dir
   config.addDataExtension("yaml", (contents) => yaml.load(contents));
+  config.addDataExtension("yml", (contents) => yaml.load(contents));
 
   config.addFilter("readableDate", (dateObj) => {
     return DateTime.fromJSDate(dateObj, { zone: "utc" }).toFormat(

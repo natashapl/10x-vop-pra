@@ -270,7 +270,7 @@ async function saveProgress() {
     });
 
     try {
-        const response = await fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/save-progress', {
+        const response = await fetch('https://pra-app-sweet-kudu-cz.app.cloud.gov/save-progress', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ async function saveProgress() {
 
 async function loadProgress(token) {
     try {
-        const response = await fetch(`https://pra-app-intelligent-quokka-qi.app.cloud.gov/load-progress/${token}`);
+        const response = await fetch(`https://pra-app-sweet-kudu-cz.app.cloud.gov/load-progress/${token}`);
         if (!response.ok) throw new Error('Failed to load progress');
         
         const data = await response.json();
@@ -378,6 +378,13 @@ async function loadProgress(token) {
         // Restore current step
         if (typeof data.currentStep === 'number') {
             currentStep = data.currentStep;
+
+            if (data.currentStep === steps.length - 1) {
+                currentStep = data.currentStep - 1;
+            } else {
+                currentStep = data.currentStep;
+            }
+
             showStep(currentStep);
 
             // Scroll to the wizard section
@@ -590,7 +597,7 @@ function submitForm() {
 
         console.log(`Submission ${submissionId}: Preparing to send fetch request`);
         
-        fetch('https://pra-app-intelligent-quokka-qi.app.cloud.gov/generate-word', {
+        fetch('https://pra-app-sweet-kudu-cz.app.cloud.gov/generate-word', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -618,7 +625,7 @@ function submitForm() {
             if (previewIframe) {
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = data.fileUrl;
-                downloadLink.textContent = 'Download Completed Document';
+                downloadLink.textContent = 'Download';
              
                 // Initial load
                 previewIframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(data.fileUrl)}&embedded=true`;

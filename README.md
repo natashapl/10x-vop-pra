@@ -106,3 +106,7 @@ CSS and SASS can be added or imported into the `_includes/theme/styles/styles.sc
 ### Adding custom Javascript
 
 Javascript can be added to the admin UI or site UI by adding or importing code into the `_includes/theme/js/admin.js` or `_includes/theme/js/app.js` files respectively.
+
+### Update the site.yaml url
+
+Currently, the url in the site.yaml file points to the Preview Cloud Pages main branch link. Once this site has a permanent domain, the url will need to be updated.
