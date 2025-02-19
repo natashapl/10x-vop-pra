@@ -111,6 +111,8 @@ Javascript can be added to the admin UI or site UI by adding or importing code i
 
 Currently, the url in the site.yaml file points to the Preview Cloud Pages main branch link. Once this site has a permanent domain, the url will need to be updated.
 
+---
+
 ### ICR Form Builder Wizard  
 
 This site includes an **ICR Form Builder**, a five-part wizard designed to guide users through form creation. This feature was implemented but will not be included in the first version of the wizard due to infrastructure limitations. However, future versions may reintroduce it with the necessary backend services.  
