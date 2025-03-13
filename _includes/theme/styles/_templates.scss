@@ -115,6 +115,10 @@ blockquote {
                     padding: 1rem;
                 }
             }
+
+            &__secondary {
+                display: none;
+            }
         }
     }
 }
